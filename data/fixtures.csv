@@ -1,0 +1,201 @@
+date,home_team,away_team
+2025-09-14,Mamelodi Sundowns,Magesi FC
+2025-09-16,Chippa United,Orbit College FC
+2025-09-16,Durban City,Siwelele
+2025-09-16,Kaizer Chiefs,Sekhukhune United
+2025-09-17,AmaZulu FC,Stellenbosch FC
+2025-09-17,Marumo Gallants,Mamelodi Sundowns
+2025-09-17,Orlando Pirates,Magesi FC
+2025-09-17,Polokwane City,Golden Arrows
+2025-09-17,Richards Bay,TS Galaxy
+2025-09-20,AmaZulu FC,Orlando Pirates
+2025-09-20,Magesi FC,Siwelele
+2025-09-20,Sekhukhune United,Golden Arrows
+2025-09-20,Mamelodi Sundowns,Durban City
+2025-09-20,Orbit College FC,Marumo Gallants
+2025-09-20,Stellenbosch FC,Richards Bay
+2025-09-21,Polokwane City,Chippa United
+2025-09-21,TS Galaxy,Kaizer Chiefs
+2025-09-23,Siwelele,Orlando Pirates
+2025-09-24,Golden Arrows,Mamelodi Sundowns
+2025-09-24,Kaizer Chiefs,Marumo Gallants
+2025-09-24,Orbit College FC,Polokwane City
+2025-09-24,Richards Bay,Magesi FC
+2025-09-24,Sekhukhune United,Chippa United
+2025-09-24,Stellenbosch FC,Durban City
+2025-09-24,TS Galaxy,AmaZulu FC
+2025-09-27,Golden Arrows,Orbit College FC
+2025-09-27,Polokwane City,Sekhukhune United
+2025-09-27,Kaizer Chiefs,AmaZulu FC
+2025-09-27,Mamelodi Sundowns,Richards Bay
+2025-09-27,Durban City,Magesi FC
+2025-09-28,Orlando Pirates,TS Galaxy
+2025-09-28,Siwelele,Marumo Gallants
+2025-09-28,Chippa United,Stellenbosch FC
+2025-10-17,Richards Bay,Orbit College FC
+2025-10-18,AmaZulu FC,Durban City
+2025-10-18,Orlando Pirates,Polokwane City
+2025-10-18,Magesi FC,TS Galaxy
+2025-10-18,Sekhukhune United,Mamelodi Sundowns
+2025-10-18,Stellenbosch FC,Golden Arrows
+2025-10-19,Marumo Gallants,Chippa United
+2025-10-19,Kaizer Chiefs,Siwelele
+2025-10-31,Durban City,Kaizer Chiefs
+2025-10-31,Siwelele,Sekhukhune United
+2025-11-01,Mamelodi Sundowns,Orlando Pirates
+2025-11-01,Orbit College FC,Magesi FC
+2025-11-01,Polokwane City,Richards Bay
+2025-11-01,Chippa United,AmaZulu FC
+2025-11-02,TS Galaxy,Stellenbosch FC
+2025-11-02,Golden Arrows,Marumo Gallants
+2025-11-04,AmaZulu FC,Polokwane City
+2025-11-04,Chippa United,Magesi FC
+2025-11-04,Kaizer Chiefs,Orbit College FC
+2025-11-04,Sekhukhune United,Richards Bay
+2025-11-05,Durban City,Marumo Gallants
+2025-11-05,Golden Arrows,Orlando Pirates
+2025-11-05,Mamelodi Sundowns,TS Galaxy
+2025-11-05,Stellenbosch FC,Siwelele
+2025-11-22,AmaZulu FC,Siwelele
+2025-11-22,Orlando Pirates,Chippa United
+2025-11-22,Magesi FC,Kaizer Chiefs
+2025-11-22,Marumo Gallants,Sekhukhune United
+2025-11-22,Orbit College FC,Stellenbosch FC
+2025-11-23,Polokwane City,Mamelodi Sundowns
+2025-11-23,TS Galaxy,Golden Arrows
+2025-11-23,Richards Bay,Durban City
+2025-11-28,Richards Bay,AmaZulu FC
+2025-11-29,Durban City,Orlando Pirates
+2025-11-29,Polokwane City,TS Galaxy
+2025-11-29,Siwelele,Chippa United
+2025-11-29,Mamelodi Sundowns,Orbit College FC
+2025-11-30,Marumo Gallants,Magesi FC
+2025-11-30,Sekhukhune United,Stellenbosch FC
+2025-11-30,Kaizer Chiefs,Golden Arrows
+2025-12-02,Orlando Pirates,Richards Bay
+2025-12-02,Siwelele,Mamelodi Sundowns
+2025-12-03,Chippa United,Kaizer Chiefs
+2025-12-03,Golden Arrows,AmaZulu FC
+2025-12-03,Magesi FC,Sekhukhune United
+2025-12-03,Orbit College FC,Durban City
+2025-12-03,Stellenbosch FC,Polokwane City
+2025-12-03,TS Galaxy,Marumo Gallants
+2026-01-23,Richards Bay,Siwelele
+2026-01-24,Orbit College FC,Chippa United
+2026-01-24,Sekhukhune United,Orlando Pirates
+2026-01-24,Golden Arrows,Stellenbosch FC
+2026-01-25,AmaZulu FC,TS Galaxy
+2026-01-25,Durban City,Polokwane City
+2026-01-27,Marumo Gallants,Kaizer Chiefs
+2026-01-30,Richards Bay,Golden Arrows
+2026-01-30,Stellenbosch FC,Magesi FC
+2026-01-31,Marumo Gallants,AmaZulu FC
+2026-01-31,Orlando Pirates,Mamelodi Sundowns
+2026-01-31,Polokwane City,Orbit College FC
+2026-01-31,Chippa United,Durban City
+2026-02-01,TS Galaxy,Sekhukhune United
+2026-02-01,Siwelele,Kaizer Chiefs
+2026-02-13,Durban City,TS Galaxy
+2026-02-13,Magesi FC,Golden Arrows
+2026-02-14,AmaZulu FC,Mamelodi Sundowns
+2026-02-14,Polokwane City,Siwelele
+2026-02-14,Kaizer Chiefs,Stellenbosch FC
+2026-02-14,Chippa United,Richards Bay
+2026-02-15,Orlando Pirates,Marumo Gallants
+2026-02-15,Sekhukhune United,Orbit College FC
+2026-02-27,Magesi FC,Polokwane City
+2026-02-27,Stellenbosch FC,AmaZulu FC
+2026-02-28,Kaizer Chiefs,Orlando Pirates
+2026-02-28,Golden Arrows,Chippa United
+2026-02-28,Siwelele,TS Galaxy
+2026-02-28,Orbit College FC,Richards Bay
+2026-03-01,Mamelodi Sundowns,Sekhukhune United
+2026-03-01,Marumo Gallants,Durban City
+2026-03-03,Richards Bay,Kaizer Chiefs
+2026-03-03,Siwelele,Stellenbosch FC
+2026-03-03,TS Galaxy,Orbit College FC
+2026-03-04,AmaZulu FC,Magesi FC
+2026-03-04,Chippa United,Marumo Gallants
+2026-03-04,Durban City,Sekhukhune United
+2026-03-04,Mamelodi Sundowns,Golden Arrows
+2026-03-04,Polokwane City,Orlando Pirates
+2026-03-13,Magesi FC,Chippa United
+2026-03-13,Stellenbosch FC,TS Galaxy
+2026-03-14,AmaZulu FC,Richards Bay
+2026-03-14,Orlando Pirates,Siwelele
+2026-03-14,Sekhukhune United,Polokwane City
+2026-03-14,Orbit College FC,Mamelodi Sundowns
+2026-03-15,Kaizer Chiefs,Durban City
+2026-03-15,Marumo Gallants,Golden Arrows
+2026-03-20,Siwelele,Orbit College FC
+2026-03-21,Polokwane City,AmaZulu FC
+2026-03-21,Stellenbosch FC,Chippa United
+2026-03-21,Golden Arrows,Sekhukhune United
+2026-03-21,Kaizer Chiefs,Magesi FC
+2026-03-21,Mamelodi Sundowns,Marumo Gallants
+2026-03-22,TS Galaxy,Orlando Pirates
+2026-03-22,Durban City,Richards Bay
+2026-04-06,AmaZulu FC,Sekhukhune United
+2026-04-07,Chippa United,Siwelele
+2026-04-07,Durban City,Mamelodi Sundowns
+2026-04-07,Magesi FC,Marumo Gallants
+2026-04-07,Orbit College FC,Kaizer Chiefs
+2026-04-07,Orlando Pirates,Golden Arrows
+2026-04-07,Richards Bay,Stellenbosch FC
+2026-04-07,TS Galaxy,Polokwane City
+2026-04-10,Richards Bay,Orlando Pirates
+2026-04-11,Golden Arrows,Durban City
+2026-04-11,Siwelele,AmaZulu FC
+2026-04-11,Mamelodi Sundowns,Stellenbosch FC
+2026-04-11,Sekhukhune United,Magesi FC
+2026-04-11,Chippa United,Polokwane City
+2026-04-12,Kaizer Chiefs,TS Galaxy
+2026-04-12,Marumo Gallants,Orbit College FC
+2026-04-17,Stellenbosch FC,Sekhukhune United
+2026-04-18,Marumo Gallants,Siwelele
+2026-04-18,Orbit College FC,Golden Arrows
+2026-04-18,Orlando Pirates,AmaZulu FC
+2026-04-18,Mamelodi Sundowns,Chippa United
+2026-04-18,Polokwane City,Kaizer Chiefs
+2026-04-19,TS Galaxy,Richards Bay
+2026-04-19,Magesi FC,Durban City
+2026-04-24,Durban City,Orbit College FC
+2026-04-24,Golden Arrows,Siwelele
+2026-04-25,Orlando Pirates,Kaizer Chiefs
+2026-04-25,Richards Bay,Mamelodi Sundowns
+2026-04-25,Sekhukhune United,Marumo Gallants
+2026-04-25,AmaZulu FC,Chippa United
+2026-04-26,Polokwane City,Stellenbosch FC
+2026-04-26,TS Galaxy,Magesi FC
+2026-05-05,Chippa United,Sekhukhune United
+2026-05-05,Magesi FC,Orbit College FC
+2026-05-05,Siwelele,Durban City
+2026-05-05,Stellenbosch FC,Orlando Pirates
+2026-05-06,Mamelodi Sundowns,Kaizer Chiefs
+2026-05-06,AmaZulu FC,Golden Arrows
+2026-05-06,Marumo Gallants,TS Galaxy
+2026-05-06,Richards Bay,Polokwane City
+2026-05-08,Durban City,Stellenbosch FC
+2026-05-09,Marumo Gallants,Richards Bay
+2026-05-09,Orbit College FC,AmaZulu FC
+2026-05-09,Golden Arrows,Polokwane City
+2026-05-09,Mamelodi Sundowns,Siwelele
+2026-05-09,Magesi FC,Orlando Pirates
+2026-05-10,TS Galaxy,Chippa United
+2026-05-10,Sekhukhune United,Kaizer Chiefs
+2026-05-16,AmaZulu FC,Kaizer Chiefs
+2026-05-16,Chippa United,Golden Arrows
+2026-05-16,Orlando Pirates,Durban City
+2026-05-16,Richards Bay,Sekhukhune United
+2026-05-16,Siwelele,Magesi FC
+2026-05-16,Stellenbosch FC,Orbit College FC
+2026-05-16,TS Galaxy,Mamelodi Sundowns
+2026-05-16,Polokwane City,Marumo Gallants
+2026-05-23,Durban City,AmaZulu FC
+2026-05-23,Golden Arrows,TS Galaxy
+2026-05-23,Kaizer Chiefs,Chippa United
+2026-05-23,Magesi FC,Richards Bay
+2026-05-23,Mamelodi Sundowns,Polokwane City
+2026-05-23,Marumo Gallants,Stellenbosch FC
+2026-05-23,Orbit College FC,Orlando Pirates
+2026-05-23,Sekhukhune United,Siwelele

@@ -1,0 +1,1441 @@
+date,home_team,away_team,home_goals,away_goals
+2018-08-04,Sundowns,Kaizer Chiefs,1,1
+2018-08-04,Cape Town City,SuperSport,2,0
+2018-08-04,Black Leopards,Polokwane City,1,0
+2018-08-04,Bidvest Wits,Free State Stars,3,0
+2018-08-04,AmaZulu,Baroka FC,1,0
+2018-08-04,Orlando Pirates,Highlands Park,1,1
+2018-08-05,Bloem Celtic,Chippa Utd,2,0
+2018-08-05,Maritzburg Utd,Golden Arrows,0,2
+2018-08-07,Polokwane City,Sundowns,0,2
+2018-08-07,Kaizer Chiefs,Bidvest Wits,1,3
+2018-08-08,Golden Arrows,Bloem Celtic,0,2
+2018-08-08,Chippa Utd,Orlando Pirates,0,1
+2018-08-08,Baroka FC,Cape Town City,2,1
+2018-08-08,SuperSport,AmaZulu,1,0
+2018-08-08,Free State Stars,Maritzburg Utd,2,1
+2018-08-09,Highlands Park,Black Leopards,2,2
+2018-08-14,Baroka FC,Kaizer Chiefs,1,1
+2018-08-15,Orlando Pirates,Bidvest Wits,0,1
+2018-08-17,Maritzburg Utd,Kaizer Chiefs,0,0
+2018-08-18,Polokwane City,Baroka FC,2,0
+2018-08-18,Cape Town City,Golden Arrows,0,0
+2018-08-18,Chippa Utd,Black Leopards,2,2
+2018-08-18,Bidvest Wits,SuperSport,0,1
+2018-08-19,AmaZulu,Free State Stars,2,1
+2018-08-19,Bloem Celtic,Orlando Pirates,1,0
+2018-08-22,Sundowns,Highlands Park,0,0
+2018-08-28,Black Leopards,Orlando Pirates,1,2
+2018-08-29,Golden Arrows,Polokwane City,1,1
+2018-08-29,SuperSport,Chippa Utd,2,1
+2018-08-29,Bidvest Wits,AmaZulu,3,0
+2018-08-29,Kaizer Chiefs,Bloem Celtic,2,2
+2018-08-29,Baroka FC,Highlands Park,1,1
+2018-08-29,Free State Stars,Cape Town City,2,2
+2018-09-15,Chippa Utd,Baroka FC,1,0
+2018-09-15,Cape Town City,Kaizer Chiefs,1,4
+2018-09-15,Maritzburg Utd,Bidvest Wits,0,0
+2018-09-15,Polokwane City,Free State Stars,1,0
+2018-09-15,Orlando Pirates,SuperSport,3,1
+2018-09-16,AmaZulu,Sundowns,3,3
+2018-09-16,Black Leopards,Bloem Celtic,0,1
+2018-09-16,Highlands Park,Golden Arrows,2,1
+2018-09-18,Free State Stars,Kaizer Chiefs,0,2
+2018-09-19,Golden Arrows,Sundowns,0,1
+2018-09-19,Orlando Pirates,Cape Town City,2,2
+2018-09-21,Bidvest Wits,Polokwane City,0,1
+2018-09-22,Baroka FC,Orlando Pirates,1,2
+2018-09-22,Golden Arrows,Chippa Utd,0,0
+2018-09-22,Kaizer Chiefs,AmaZulu,2,0
+2018-09-22,Free State Stars,Highlands Park,1,0
+2018-09-23,Bloem Celtic,Maritzburg Utd,0,1
+2018-09-23,SuperSport,Black Leopards,4,0
+2018-09-26,Baroka FC,Free State Stars,0,0
+2018-10-02,AmaZulu,Maritzburg Utd,0,0
+2018-10-02,Cape Town City,Bidvest Wits,0,2
+2018-10-02,Highlands Park,Kaizer Chiefs,0,0
+2018-10-02,Polokwane City,SuperSport,1,1
+2018-10-03,Chippa Utd,Free State Stars,1,0
+2018-10-03,Bloem Celtic,Sundowns,0,0
+2018-10-03,Orlando Pirates,Golden Arrows,0,0
+2018-10-03,Black Leopards,Baroka FC,1,0
+2018-10-05,Maritzburg Utd,Cape Town City,0,0
+2018-10-06,Free State Stars,Bloem Celtic,2,0
+2018-10-06,Kaizer Chiefs,Polokwane City,0,1
+2018-10-06,Highlands Park,Chippa Utd,2,1
+2018-10-06,AmaZulu,Orlando Pirates,1,1
+2018-10-07,Golden Arrows,Black Leopards,1,0
+2018-10-07,Sundowns,Bidvest Wits,1,1
+2018-10-07,Baroka FC,SuperSport,0,0
+2018-10-24,Free State Stars,Golden Arrows,1,1
+2018-10-26,Bidvest Wits,Highlands Park,1,0
+2018-10-27,Orlando Pirates,Kaizer Chiefs,2,1
+2018-10-27,Polokwane City,Maritzburg Utd,1,0
+2018-10-27,Chippa Utd,Sundowns,0,1
+2018-10-27,Cape Town City,AmaZulu,3,0
+2018-10-28,Black Leopards,Free State Stars,1,1
+2018-10-28,Bloem Celtic,Baroka FC,1,0
+2018-10-28,SuperSport,Golden Arrows,1,1
+2018-11-06,Polokwane City,Orlando Pirates,1,2
+2018-11-07,Sundowns,Free State Stars,3,1
+2018-11-07,Kaizer Chiefs,Black Leopards,1,0
+2018-11-09,Maritzburg Utd,Highlands Park,2,2
+2018-11-10,Sundowns,Orlando Pirates,0,0
+2018-11-10,Golden Arrows,Baroka FC,1,2
+2018-11-10,Kaizer Chiefs,Chippa Utd,0,0
+2018-11-10,Bidvest Wits,Bloem Celtic,1,2
+2018-11-10,Free State Stars,SuperSport,0,1
+2018-11-11,AmaZulu,Polokwane City,0,0
+2018-11-11,Cape Town City,Black Leopards,3,1
+2018-11-27,Highlands Park,AmaZulu,1,2
+2018-11-27,Maritzburg Utd,Chippa Utd,0,0
+2018-11-27,Polokwane City,Cape Town City,1,2
+2018-11-28,Bloem Celtic,SuperSport,0,0
+2018-11-30,Chippa Utd,AmaZulu,0,1
+2018-12-01,Highlands Park,Cape Town City,2,0
+2018-12-01,Golden Arrows,Kaizer Chiefs,2,1
+2018-12-01,Black Leopards,Bidvest Wits,0,1
+2018-12-01,Orlando Pirates,Maritzburg Utd,0,0
+2018-12-02,SuperSport,Sundowns,1,2
+2018-12-02,Bloem Celtic,Polokwane City,1,2
+2018-12-11,Polokwane City,Highlands Park,2,2
+2018-12-11,Cape Town City,Chippa Utd,1,1
+2018-12-11,Sundowns,Baroka FC,0,0
+2018-12-11,Free State Stars,Orlando Pirates,1,3
+2018-12-12,AmaZulu,Bloem Celtic,3,0
+2018-12-12,Bidvest Wits,Golden Arrows,2,2
+2018-12-12,Kaizer Chiefs,SuperSport,1,0
+2018-12-12,Maritzburg Utd,Black Leopards,1,1
+2018-12-14,Chippa Utd,Polokwane City,2,2
+2018-12-15,Black Leopards,AmaZulu,3,1
+2018-12-15,SuperSport,Maritzburg Utd,1,0
+2018-12-16,Baroka FC,Bidvest Wits,1,2
+2018-12-17,Bloem Celtic,Highlands Park,1,2
+2018-12-21,Bidvest Wits,Chippa Utd,2,0
+2018-12-22,AmaZulu,Golden Arrows,2,0
+2018-12-22,Cape Town City,Bloem Celtic,3,2
+2018-12-22,Maritzburg Utd,Baroka FC,0,1
+2018-12-23,Highlands Park,SuperSport,1,1
+2019-01-04,Chippa Utd,Bloem Celtic,0,1
+2019-01-05,Kaizer Chiefs,Sundowns,1,2
+2019-01-05,Polokwane City,AmaZulu,3,2
+2019-01-05,Free State Stars,Bidvest Wits,1,2
+2019-01-05,Highlands Park,Orlando Pirates,2,2
+2019-01-05,SuperSport,Cape Town City,0,1
+2019-01-06,Golden Arrows,Maritzburg Utd,2,0
+2019-01-06,Baroka FC,Black Leopards,1,2
+2019-01-08,Orlando Pirates,Chippa Utd,4,2
+2019-01-09,Maritzburg Utd,Free State Stars,1,2
+2019-01-09,Bidvest Wits,Kaizer Chiefs,0,2
+2019-01-12,Black Leopards,SuperSport,2,0
+2019-01-12,Cape Town City,Baroka FC,2,2
+2019-01-12,AmaZulu,Highlands Park,0,0
+2019-01-13,Bloem Celtic,Golden Arrows,1,1
+2019-01-16,Sundowns,Maritzburg Utd,1,0
+2019-01-16,AmaZulu,Kaizer Chiefs,2,3
+2019-01-16,Cape Town City,Free State Stars,5,0
+2019-01-19,Chippa Utd,Maritzburg Utd,2,0
+2019-01-19,Black Leopards,Golden Arrows,1,1
+2019-01-20,Polokwane City,Bidvest Wits,3,3
+2019-01-20,SuperSport,Bloem Celtic,2,1
+2019-01-22,Highlands Park,Sundowns,1,2
+2019-01-22,Orlando Pirates,Baroka FC,1,1
+2019-01-29,Sundowns,AmaZulu,0,2
+2019-01-30,Kaizer Chiefs,Cape Town City,0,1
+2019-02-01,Bidvest Wits,Maritzburg Utd,1,0
+2019-02-02,Golden Arrows,Highlands Park,2,1
+2019-02-03,Bloem Celtic,Black Leopards,3,0
+2019-02-03,Baroka FC,Chippa Utd,1,1
+2019-02-06,Sundowns,Black Leopards,3,0
+2019-02-08,Maritzburg Utd,Polokwane City,3,1
+2019-02-09,Highlands Park,Bidvest Wits,2,1
+2019-02-09,Kaizer Chiefs,Orlando Pirates,1,1
+2019-02-09,Free State Stars,Chippa Utd,0,2
+2019-02-09,AmaZulu,Cape Town City,1,0
+2019-02-10,Baroka FC,Bloem Celtic,2,2
+2019-02-10,Golden Arrows,SuperSport,2,3
+2019-02-19,Sundowns,Polokwane City,1,1
+2019-02-20,SuperSport,Orlando Pirates,1,0
+2019-02-22,Chippa Utd,Golden Arrows,1,1
+2019-02-23,Cape Town City,Maritzburg Utd,3,2
+2019-02-23,Polokwane City,Kaizer Chiefs,1,1
+2019-02-23,Bidvest Wits,Sundowns,1,1
+2019-02-23,SuperSport,Baroka FC,1,2
+2019-02-23,Orlando Pirates,AmaZulu,4,1
+2019-02-24,Black Leopards,Highlands Park,0,0
+2019-02-24,Bloem Celtic,Free State Stars,2,3
+2019-02-27,Sundowns,Cape Town City,3,2
+2019-03-01,Maritzburg Utd,AmaZulu,2,1
+2019-03-02,Sundowns,Bloem Celtic,0,0
+2019-03-02,Kaizer Chiefs,Highlands Park,3,2
+2019-03-02,Free State Stars,Black Leopards,2,2
+2019-03-02,Bidvest Wits,Cape Town City,2,3
+2019-03-02,Golden Arrows,Orlando Pirates,0,1
+2019-03-03,Chippa Utd,SuperSport,0,1
+2019-03-03,Baroka FC,Polokwane City,1,3
+2019-03-05,Orlando Pirates,Bloem Celtic,1,1
+2019-03-05,Cape Town City,Sundowns,2,1
+2019-03-06,Free State Stars,Polokwane City,1,1
+2019-03-09,Highlands Park,Baroka FC,2,1
+2019-03-09,Polokwane City,Golden Arrows,2,0
+2019-03-09,Kaizer Chiefs,Maritzburg Utd,1,0
+2019-03-09,AmaZulu,Bidvest Wits,2,0
+2019-03-10,SuperSport,Free State Stars,1,0
+2019-03-10,Black Leopards,Chippa Utd,3,2
+2019-03-12,Maritzburg Utd,Sundowns,1,2
+2019-03-13,Baroka FC,Golden Arrows,0,1
+2019-03-15,SuperSport,Kaizer Chiefs,1,1
+2019-03-15,Bloem Celtic,Bidvest Wits,2,4
+2019-03-15,Cape Town City,Polokwane City,0,0
+2019-03-16,Free State Stars,AmaZulu,4,1
+2019-03-17,Chippa Utd,Highlands Park,1,1
+2019-04-01,Orlando Pirates,Sundowns,0,0
+2019-04-05,Maritzburg Utd,Bloem Celtic,2,1
+2019-04-06,Golden Arrows,Cape Town City,1,0
+2019-04-06,Bidvest Wits,Orlando Pirates,0,1
+2019-04-06,Kaizer Chiefs,Baroka FC,0,1
+2019-04-06,AmaZulu,Chippa Utd,0,1
+2019-04-07,Polokwane City,Black Leopards,3,1
+2019-04-10,Orlando Pirates,Black Leopards,2,0
+2019-04-12,Chippa Utd,Bidvest Wits,0,1
+2019-04-13,Highlands Park,Maritzburg Utd,1,0
+2019-04-13,Black Leopards,Kaizer Chiefs,1,1
+2019-04-13,Orlando Pirates,Free State Stars,2,1
+2019-04-13,SuperSport,Polokwane City,0,0
+2019-04-14,Golden Arrows,AmaZulu,1,1
+2019-04-14,Bloem Celtic,Cape Town City,0,3
+2019-04-17,Sundowns,SuperSport,0,2
+2019-04-17,Highlands Park,Free State Stars,1,1
+2019-04-20,Baroka FC,Sundowns,1,2
+2019-04-23,Sundowns,Chippa Utd,3,2
+2019-04-23,Cape Town City,Highlands Park,1,1
+2019-04-23,Kaizer Chiefs,Golden Arrows,1,1
+2019-04-24,Free State Stars,Baroka FC,2,2
+2019-04-24,Maritzburg Utd,Orlando Pirates,0,1
+2019-04-24,AmaZulu,SuperSport,2,0
+2019-04-24,Polokwane City,Bloem Celtic,1,2
+2019-04-24,Bidvest Wits,Black Leopards,3,1
+2019-04-26,Chippa Utd,Cape Town City,0,2
+2019-04-27,Highlands Park,Polokwane City,0,2
+2019-04-27,Black Leopards,Maritzburg Utd,1,2
+2019-04-27,SuperSport,Bidvest Wits,1,1
+2019-04-27,Bloem Celtic,Kaizer Chiefs,1,0
+2019-04-28,Baroka FC,AmaZulu,1,0
+2019-04-28,Golden Arrows,Free State Stars,2,1
+2019-04-30,Black Leopards,Sundowns,1,2
+2019-05-04,Polokwane City,Chippa Utd,1,3
+2019-05-04,Maritzburg Utd,SuperSport,3,1
+2019-05-04,Bidvest Wits,Baroka FC,3,1
+2019-05-04,Kaizer Chiefs,Free State Stars,1,1
+2019-05-04,Cape Town City,Orlando Pirates,2,2
+2019-05-04,AmaZulu,Black Leopards,1,1
+2019-05-04,Highlands Park,Bloem Celtic,1,0
+2019-05-07,Sundowns,Golden Arrows,2,0
+2019-05-11,Black Leopards,Cape Town City,1,0
+2019-05-11,Free State Stars,Sundowns,0,1
+2019-05-11,SuperSport,Highlands Park,0,2
+2019-05-11,Baroka FC,Maritzburg Utd,1,1
+2019-05-11,Bloem Celtic,AmaZulu,3,1
+2019-05-11,Chippa Utd,Kaizer Chiefs,1,0
+2019-05-11,Golden Arrows,Bidvest Wits,0,1
+2019-05-11,Orlando Pirates,Polokwane City,3,0
+2019-08-03,Sundowns,SuperSport,2,0
+2019-08-03,Baroka FC,Cape Town City,2,2
+2019-08-03,Chippa Utd,Stellenbosch FC,0,0
+2019-08-03,Orlando Pirates,Bloem Celtic,3,1
+2019-08-03,AmaZulu,Bidvest Wits,0,3
+2019-08-04,Black Leopards,Polokwane City,0,1
+2019-08-04,Highlands Park,Kaizer Chiefs,2,3
+2019-08-04,Golden Arrows,Maritzburg Utd,1,0
+2019-08-06,Bidvest Wits,Baroka FC,0,1
+2019-08-09,Maritzburg Utd,Highlands Park,1,1
+2019-08-10,Polokwane City,AmaZulu,1,0
+2019-08-10,Cape Town City,Stellenbosch FC,1,0
+2019-08-10,Kaizer Chiefs,Black Leopards,1,0
+2019-08-11,Bloem Celtic,Golden Arrows,5,0
+2019-08-14,SuperSport,Orlando Pirates,3,0
+2019-08-14,Chippa Utd,Sundowns,1,1
+2019-08-14,Polokwane City,Bidvest Wits,0,1
+2019-08-20,Sundowns,Cape Town City,1,1
+2019-08-20,AmaZulu,Orlando Pirates,0,0
+2019-08-24,Black Leopards,Highlands Park,1,1
+2019-08-24,Golden Arrows,Chippa Utd,2,1
+2019-08-24,Kaizer Chiefs,SuperSport,1,1
+2019-08-25,Baroka FC,Bloem Celtic,0,0
+2019-08-25,Stellenbosch FC,Maritzburg Utd,0,0
+2019-08-27,Highlands Park,AmaZulu,2,1
+2019-08-27,Cape Town City,Kaizer Chiefs,1,2
+2019-08-28,Chippa Utd,Polokwane City,0,0
+2019-08-28,Baroka FC,SuperSport,0,2
+2019-08-28,Bidvest Wits,Stellenbosch FC,2,1
+2019-08-28,Orlando Pirates,Golden Arrows,0,0
+2019-08-28,Maritzburg Utd,Black Leopards,0,1
+2019-08-28,Bloem Celtic,Sundowns,1,2
+2019-09-14,Golden Arrows,AmaZulu,1,1
+2019-09-14,Orlando Pirates,Chippa Utd,2,1
+2019-09-14,Kaizer Chiefs,Polokwane City,0,1
+2019-09-14,SuperSport,Cape Town City,3,3
+2019-09-15,Bloem Celtic,Stellenbosch FC,2,1
+2019-09-15,Black Leopards,Baroka FC,0,2
+2019-09-21,Stellenbosch FC,Black Leopards,2,2
+2019-09-21,Chippa Utd,Bloem Celtic,0,0
+2019-09-21,Polokwane City,SuperSport,3,1
+2019-09-21,Sundowns,Maritzburg Utd,2,1
+2019-09-21,Bidvest Wits,Orlando Pirates,4,3
+2019-09-22,Baroka FC,Highlands Park,1,2
+2019-09-22,Cape Town City,Golden Arrows,1,1
+2019-09-24,AmaZulu,Kaizer Chiefs,0,2
+2019-09-27,Maritzburg Utd,Chippa Utd,1,0
+2019-09-28,Orlando Pirates,Cape Town City,3,3
+2019-09-28,Golden Arrows,Stellenbosch FC,2,2
+2019-09-28,Kaizer Chiefs,Baroka FC,1,0
+2019-09-28,SuperSport,AmaZulu,1,0
+2019-09-29,Black Leopards,Bloem Celtic,1,0
+2019-09-29,Highlands Park,Polokwane City,2,0
+2019-10-01,AmaZulu,Cape Town City,2,1
+2019-10-01,Kaizer Chiefs,Golden Arrows,2,0
+2019-10-01,Chippa Utd,Bidvest Wits,0,1
+2019-10-02,Black Leopards,Sundowns,1,2
+2019-10-02,Maritzburg Utd,Baroka FC,1,0
+2019-10-02,Polokwane City,Stellenbosch FC,0,2
+2019-10-23,Sundowns,Highlands Park,1,0
+2019-10-25,Cape Town City,Maritzburg Utd,0,1
+2019-10-25,SuperSport,Black Leopards,2,2
+2019-10-26,Stellenbosch FC,Orlando Pirates,1,0
+2019-10-26,Golden Arrows,Polokwane City,2,1
+2019-10-26,Highlands Park,Chippa Utd,2,0
+2019-10-27,Baroka FC,AmaZulu,0,1
+2019-10-27,Sundowns,Kaizer Chiefs,0,2
+2019-10-29,Highlands Park,Orlando Pirates,0,1
+2019-10-30,Bloem Celtic,SuperSport,1,1
+2019-11-05,Orlando Pirates,Maritzburg Utd,0,0
+2019-11-05,Bloem Celtic,Highlands Park,3,1
+2019-11-05,SuperSport,Golden Arrows,0,0
+2019-11-06,Baroka FC,Sundowns,0,0
+2019-11-06,Cape Town City,Polokwane City,5,3
+2019-11-06,Chippa Utd,Kaizer Chiefs,0,2
+2019-11-06,AmaZulu,Stellenbosch FC,2,0
+2019-11-08,Bidvest Wits,SuperSport,0,1
+2019-11-08,Maritzburg Utd,Bloem Celtic,2,2
+2019-11-09,Kaizer Chiefs,Orlando Pirates,3,2
+2019-11-09,Stellenbosch FC,Highlands Park,0,0
+2019-11-09,Polokwane City,Baroka FC,0,1
+2019-11-09,AmaZulu,Chippa Utd,0,2
+2019-11-10,Black Leopards,Cape Town City,2,1
+2019-11-10,Golden Arrows,Sundowns,3,2
+2019-11-26,Highlands Park,Bidvest Wits,1,1
+2019-11-26,Orlando Pirates,Polokwane City,3,2
+2019-11-26,Sundowns,AmaZulu,1,0
+2019-11-27,Baroka FC,Golden Arrows,0,1
+2019-11-27,Stellenbosch FC,Kaizer Chiefs,0,4
+2019-11-27,Bloem Celtic,Cape Town City,0,0
+2019-11-27,Maritzburg Utd,SuperSport,0,2
+2019-11-27,Chippa Utd,Black Leopards,3,0
+2019-11-30,Polokwane City,Bloem Celtic,0,1
+2019-11-30,Black Leopards,Golden Arrows,2,1
+2019-11-30,Cape Town City,Highlands Park,0,0
+2019-11-30,SuperSport,Stellenbosch FC,1,1
+2019-12-01,AmaZulu,Maritzburg Utd,0,0
+2019-12-01,Chippa Utd,Baroka FC,0,0
+2019-12-06,SuperSport,Highlands Park,2,0
+2019-12-07,Black Leopards,AmaZulu,0,0
+2019-12-07,Baroka FC,Orlando Pirates,2,2
+2019-12-07,Cape Town City,Chippa Utd,0,1
+2019-12-07,Kaizer Chiefs,Bloem Celtic,5,3
+2019-12-08,Polokwane City,Maritzburg Utd,0,1
+2019-12-11,Sundowns,Stellenbosch FC,3,1
+2019-12-12,Golden Arrows,Bidvest Wits,0,1
+2019-12-17,Bidvest Wits,Sundowns,1,1
+2019-12-20,Bidvest Wits,Cape Town City,2,0
+2019-12-21,Highlands Park,Golden Arrows,2,0
+2019-12-21,Orlando Pirates,Black Leopards,3,1
+2019-12-21,Baroka FC,Stellenbosch FC,0,1
+2019-12-21,Sundowns,Polokwane City,1,0
+2019-12-21,Chippa Utd,SuperSport,1,0
+2019-12-22,Bloem Celtic,AmaZulu,1,2
+2019-12-22,Maritzburg Utd,Kaizer Chiefs,1,1
+2020-01-03,Maritzburg Utd,Golden Arrows,2,1
+2020-01-04,Bloem Celtic,Orlando Pirates,1,1
+2020-01-04,Stellenbosch FC,Bidvest Wits,0,2
+2020-01-04,Polokwane City,Chippa Utd,2,0
+2020-01-04,SuperSport,Kaizer Chiefs,2,1
+2020-01-04,AmaZulu,Sundowns,0,3
+2020-01-05,Highlands Park,Black Leopards,2,1
+2020-01-05,Cape Town City,Baroka FC,1,0
+2020-01-07,Polokwane City,Orlando Pirates,1,4
+2020-01-07,Stellenbosch FC,Bloem Celtic,1,2
+2020-01-07,Sundowns,Bidvest Wits,0,0
+2020-01-08,Black Leopards,Chippa Utd,1,2
+2020-01-08,Golden Arrows,Baroka FC,1,0
+2020-01-08,SuperSport,Maritzburg Utd,2,2
+2020-01-08,Kaizer Chiefs,Highlands Park,3,0
+2020-01-08,Cape Town City,AmaZulu,2,2
+2020-01-11,Baroka FC,Polokwane City,1,0
+2020-01-11,Highlands Park,Stellenbosch FC,1,4
+2020-01-11,Chippa Utd,Maritzburg Utd,0,0
+2020-01-12,AmaZulu,SuperSport,0,2
+2020-01-12,Kaizer Chiefs,Cape Town City,3,0
+2020-01-12,Bloem Celtic,Black Leopards,4,2
+2020-01-15,Bidvest Wits,Bloem Celtic,3,2
+2020-01-15,Orlando Pirates,Sundowns,1,0
+2020-01-17,Stellenbosch FC,Baroka FC,1,0
+2020-01-17,Maritzburg Utd,AmaZulu,1,0
+2020-01-18,Black Leopards,Kaizer Chiefs,1,1
+2020-01-18,Orlando Pirates,Highlands Park,3,1
+2020-01-18,Cape Town City,Bidvest Wits,2,0
+2020-01-19,SuperSport,Sundowns,1,2
+2020-01-19,Bloem Celtic,Chippa Utd,1,1
+2020-01-19,Polokwane City,Golden Arrows,1,1
+2020-01-24,Cape Town City,Black Leopards,1,0
+2020-01-24,SuperSport,Chippa Utd,3,0
+2020-01-25,Golden Arrows,Kaizer Chiefs,0,1
+2020-01-25,Stellenbosch FC,Polokwane City,1,0
+2020-01-25,Orlando Pirates,AmaZulu,1,0
+2020-01-26,Baroka FC,Maritzburg Utd,2,1
+2020-01-31,Maritzburg Utd,Cape Town City,1,1
+2020-02-01,Golden Arrows,SuperSport,1,0
+2020-02-01,Chippa Utd,Orlando Pirates,1,2
+2020-02-01,Highlands Park,Baroka FC,1,0
+2020-02-02,Black Leopards,Stellenbosch FC,2,1
+2020-02-02,AmaZulu,Polokwane City,1,0
+2020-02-12,Bidvest Wits,Maritzburg Utd,0,1
+2020-02-14,Stellenbosch FC,SuperSport,1,0
+2020-02-15,Sundowns,Chippa Utd,3,0
+2020-02-15,Baroka FC,Bidvest Wits,0,1
+2020-02-15,Highlands Park,Bloem Celtic,2,0
+2020-02-15,Kaizer Chiefs,Maritzburg Utd,1,2
+2020-02-15,AmaZulu,Golden Arrows,1,2
+2020-02-16,Polokwane City,Cape Town City,3,2
+2020-02-16,Black Leopards,Orlando Pirates,0,1
+2020-02-19,Sundowns,Bloem Celtic,2,1
+2020-02-19,Bidvest Wits,Highlands Park,2,2
+2020-02-28,Maritzburg Utd,Stellenbosch FC,3,0
+2020-02-29,Golden Arrows,Highlands Park,1,1
+2020-02-29,Orlando Pirates,Kaizer Chiefs,0,1
+2020-02-29,Chippa Utd,AmaZulu,1,0
+2020-02-29,SuperSport,Bidvest Wits,2,0
+2020-03-01,Bloem Celtic,Baroka FC,2,1
+2020-03-01,Polokwane City,Black Leopards,2,1
+2020-03-06,Maritzburg Utd,Polokwane City,1,0
+2020-03-07,Baroka FC,Black Leopards,2,0
+2020-03-07,Golden Arrows,Orlando Pirates,0,0
+2020-03-07,Bidvest Wits,Chippa Utd,0,0
+2020-03-07,Kaizer Chiefs,AmaZulu,0,1
+2020-03-08,Highlands Park,SuperSport,0,2
+2020-03-08,Cape Town City,Bloem Celtic,2,0
+2020-03-10,Bidvest Wits,Black Leopards,1,0
+2020-03-11,Stellenbosch FC,Sundowns,0,1
+2020-08-11,Sundowns,Orlando Pirates,0,0
+2020-08-12,Kaizer Chiefs,Bidvest Wits,1,1
+2020-08-14,Chippa Utd,Cape Town City,0,1
+2020-08-14,Highlands Park,Sundowns,1,1
+2020-08-15,Stellenbosch FC,Golden Arrows,1,0
+2020-08-15,AmaZulu,Baroka FC,0,0
+2020-08-15,Polokwane City,Kaizer Chiefs,2,3
+2020-08-15,Orlando Pirates,Bidvest Wits,0,0
+2020-08-16,Black Leopards,Maritzburg Utd,3,2
+2020-08-16,SuperSport,Bloem Celtic,1,1
+2020-08-17,Cape Town City,Sundowns,3,2
+2020-08-18,Bidvest Wits,Golden Arrows,0,0
+2020-08-18,Chippa Utd,Highlands Park,0,0
+2020-08-18,Orlando Pirates,Baroka FC,1,1
+2020-08-19,SuperSport,Polokwane City,2,0
+2020-08-19,Bloem Celtic,Kaizer Chiefs,3,1
+2020-08-20,Stellenbosch FC,Cape Town City,1,0
+2020-08-21,Golden Arrows,Black Leopards,1,2
+2020-08-21,Bidvest Wits,AmaZulu,2,1
+2020-08-21,Maritzburg Utd,Sundowns,2,2
+2020-08-22,Polokwane City,Highlands Park,1,1
+2020-08-22,Baroka FC,Chippa Utd,0,1
+2020-08-23,Cape Town City,Orlando Pirates,1,0
+2020-08-23,Kaizer Chiefs,Stellenbosch FC,1,1
+2020-08-24,Maritzburg Utd,Bidvest Wits,0,0
+2020-08-24,AmaZulu,Bloem Celtic,2,2
+2020-08-24,Sundowns,Golden Arrows,1,0
+2020-08-25,Black Leopards,SuperSport,0,1
+2020-08-27,Bloem Celtic,Bidvest Wits,1,1
+2020-08-27,Kaizer Chiefs,Sundowns,0,1
+2020-08-28,Stellenbosch FC,Chippa Utd,1,1
+2020-08-29,Orlando Pirates,SuperSport,2,1
+2020-08-29,Highlands Park,Maritzburg Utd,1,1
+2020-08-29,AmaZulu,Black Leopards,1,0
+2020-08-29,Golden Arrows,Cape Town City,1,4
+2020-08-30,Bloem Celtic,Polokwane City,0,0
+2020-08-30,Bidvest Wits,Kaizer Chiefs,1,0
+2020-08-30,Sundowns,Baroka FC,0,1
+2020-09-02,SuperSport,Baroka FC,4,1
+2020-09-02,Polokwane City,Sundowns,0,3
+2020-09-02,Golden Arrows,Bloem Celtic,0,0
+2020-09-02,Kaizer Chiefs,Chippa Utd,1,0
+2020-09-02,Maritzburg Utd,Orlando Pirates,0,1
+2020-09-02,Stellenbosch FC,AmaZulu,1,1
+2020-09-02,Highlands Park,Cape Town City,1,0
+2020-09-02,Black Leopards,Bidvest Wits,1,0
+2020-09-05,Chippa Utd,Golden Arrows,1,0
+2020-09-05,Orlando Pirates,Stellenbosch FC,1,0
+2020-09-05,Bidvest Wits,Polokwane City,3,1
+2020-09-05,Bloem Celtic,Maritzburg Utd,3,1
+2020-09-05,Sundowns,Black Leopards,3,0
+2020-09-05,Baroka FC,Kaizer Chiefs,1,1
+2020-09-05,Cape Town City,SuperSport,1,0
+2020-09-05,AmaZulu,Highlands Park,1,1
+2020-10-24,Baroka FC,Maritzburg Utd,2,1
+2020-10-24,Kaizer Chiefs,Sundowns,0,3
+2020-10-24,Bloem Celtic,Golden Arrows,1,1
+2020-10-24,Cape Town City,Chippa Utd,1,1
+2020-10-24,AmaZulu,Orlando Pirates,1,1
+2020-10-24,SuperSport,Black Leopards,2,0
+2020-10-25,Stellenbosch FC,Moroka Swallows,1,1
+2020-10-25,TTM FC,TS Galaxy,1,1
+2020-10-27,Black Leopards,Baroka FC,1,3
+2020-10-27,Chippa Utd,Kaizer Chiefs,0,1
+2020-10-28,Maritzburg Utd,Cape Town City,0,1
+2020-10-28,Golden Arrows,SuperSport,3,1
+2020-10-28,TS Galaxy,AmaZulu,1,0
+2020-10-28,Orlando Pirates,Stellenbosch FC,1,1
+2020-10-28,Sundowns,TTM FC,0,0
+2020-10-28,Moroka Swallows,Bloem Celtic,1,0
+2020-11-03,Chippa Utd,Maritzburg Utd,3,1
+2020-11-04,Kaizer Chiefs,TS Galaxy,0,0
+2020-11-04,SuperSport,Stellenbosch FC,1,0
+2020-11-04,Cape Town City,Sundowns,0,2
+2020-11-04,TTM FC,Moroka Swallows,0,2
+2020-11-04,Baroka FC,Golden Arrows,1,1
+2020-11-04,Bloem Celtic,Orlando Pirates,0,1
+2020-11-04,AmaZulu,Black Leopards,2,0
+2020-11-21,Golden Arrows,Kaizer Chiefs,2,2
+2020-11-21,Stellenbosch FC,Chippa Utd,2,0
+2020-11-21,Black Leopards,Maritzburg Utd,1,0
+2020-11-21,Orlando Pirates,SuperSport,2,1
+2020-11-21,Moroka Swallows,TS Galaxy,0,0
+2020-11-22,Sundowns,AmaZulu,4,3
+2020-11-22,Cape Town City,Bloem Celtic,4,2
+2020-11-22,TTM FC,Baroka FC,1,0
+2020-11-24,Moroka Swallows,Kaizer Chiefs,1,0
+2020-11-25,Bloem Celtic,Black Leopards,1,0
+2020-11-27,Maritzburg Utd,SuperSport,1,2
+2020-11-28,TS Galaxy,Golden Arrows,1,1
+2020-11-28,Orlando Pirates,Baroka FC,1,1
+2020-11-28,Sundowns,Stellenbosch FC,3,0
+2020-11-28,AmaZulu,Cape Town City,1,1
+2020-11-29,Chippa Utd,TTM FC,1,1
+2020-12-05,Cape Town City,Orlando Pirates,2,2
+2020-12-05,Golden Arrows,Moroka Swallows,1,1
+2020-12-05,TTM FC,AmaZulu,1,1
+2020-12-05,Maritzburg Utd,Sundowns,1,1
+2020-12-06,TS Galaxy,Stellenbosch FC,0,1
+2020-12-06,Baroka FC,Chippa Utd,2,1
+2020-12-09,Kaizer Chiefs,Black Leopards,2,2
+2020-12-15,SuperSport,Kaizer Chiefs,2,1
+2020-12-15,Sundowns,TS Galaxy,2,0
+2020-12-15,Moroka Swallows,Maritzburg Utd,2,0
+2020-12-15,Stellenbosch FC,Cape Town City,1,2
+2020-12-16,Black Leopards,TTM FC,1,1
+2020-12-16,AmaZulu,Golden Arrows,0,2
+2020-12-16,Orlando Pirates,Chippa Utd,1,0
+2020-12-16,Bloem Celtic,Baroka FC,2,0
+2020-12-18,Maritzburg Utd,Stellenbosch FC,2,2
+2020-12-19,Baroka FC,SuperSport,1,3
+2020-12-19,Golden Arrows,Sundowns,1,1
+2020-12-19,Kaizer Chiefs,Bloem Celtic,1,1
+2020-12-19,Cape Town City,TS Galaxy,3,2
+2020-12-20,AmaZulu,Chippa Utd,3,1
+2020-12-20,Black Leopards,Moroka Swallows,1,2
+2021-01-02,Sundowns,Orlando Pirates,1,0
+2021-01-02,Maritzburg Utd,Bloem Celtic,2,1
+2021-01-05,Moroka Swallows,Cape Town City,3,2
+2021-01-05,Stellenbosch FC,TTM FC,2,0
+2021-01-05,TS Galaxy,Baroka FC,2,2
+2021-01-06,SuperSport,Chippa Utd,2,2
+2021-01-08,Stellenbosch FC,Black Leopards,1,1
+2021-01-09,TS Galaxy,SuperSport,0,3
+2021-01-09,Baroka FC,Sundowns,0,2
+2021-01-09,Golden Arrows,Chippa Utd,1,0
+2021-01-09,Kaizer Chiefs,Maritzburg Utd,0,2
+2021-01-09,TTM FC,Cape Town City,2,2
+2021-01-10,Bloem Celtic,AmaZulu,1,1
+2021-01-10,Orlando Pirates,Moroka Swallows,1,1
+2021-01-13,AmaZulu,Kaizer Chiefs,0,1
+2021-01-13,SuperSport,Bloem Celtic,2,1
+2021-01-13,TTM FC,Orlando Pirates,0,3
+2021-01-16,Golden Arrows,TTM FC,1,0
+2021-01-16,SuperSport,Sundowns,0,0
+2021-01-16,Bloem Celtic,Stellenbosch FC,1,1
+2021-01-16,TS Galaxy,Chippa Utd,0,1
+2021-01-16,Cape Town City,Kaizer Chiefs,1,2
+2021-01-16,Baroka FC,Moroka Swallows,0,1
+2021-01-17,AmaZulu,Maritzburg Utd,0,0
+2021-01-17,Black Leopards,Orlando Pirates,2,0
+2021-01-19,Kaizer Chiefs,TTM FC,3,0
+2021-01-19,Sundowns,Bloem Celtic,0,0
+2021-01-20,Stellenbosch FC,Baroka FC,2,3
+2021-01-20,Moroka Swallows,Chippa Utd,1,1
+2021-01-20,Maritzburg Utd,TS Galaxy,0,3
+2021-01-20,Orlando Pirates,Golden Arrows,0,0
+2021-01-20,Black Leopards,Cape Town City,0,2
+2021-01-20,SuperSport,AmaZulu,1,1
+2021-01-23,Sundowns,Moroka Swallows,1,1
+2021-01-23,Black Leopards,Chippa Utd,0,3
+2021-01-23,Baroka FC,AmaZulu,0,2
+2021-01-23,Maritzburg Utd,Orlando Pirates,0,1
+2021-01-23,Stellenbosch FC,Kaizer Chiefs,0,0
+2021-01-24,TTM FC,SuperSport,0,2
+2021-01-24,Cape Town City,Golden Arrows,4,2
+2021-01-26,Kaizer Chiefs,Baroka FC,1,1
+2021-01-26,Orlando Pirates,TS Galaxy,1,1
+2021-01-27,Black Leopards,Sundowns,1,2
+2021-01-29,AmaZulu,Stellenbosch FC,2,1
+2021-01-30,Orlando Pirates,Kaizer Chiefs,2,1
+2021-01-30,Bloem Celtic,TTM FC,1,0
+2021-01-30,SuperSport,Moroka Swallows,1,1
+2021-01-30,Black Leopards,TS Galaxy,0,3
+2021-01-30,Golden Arrows,Maritzburg Utd,2,1
+2021-01-31,Baroka FC,Cape Town City,1,1
+2021-01-31,Sundowns,Chippa Utd,2,0
+2021-02-02,AmaZulu,Bloem Celtic,4,3
+2021-02-02,Golden Arrows,Orlando Pirates,2,0
+2021-02-09,Bloem Celtic,SuperSport,2,1
+2021-02-09,Orlando Pirates,Cape Town City,2,0
+2021-02-12,Maritzburg Utd,TTM FC,0,1
+2021-02-12,Stellenbosch FC,Golden Arrows,1,3
+2021-02-13,Bloem Celtic,Chippa Utd,1,1
+2021-02-13,SuperSport,Cape Town City,2,1
+2021-02-14,Moroka Swallows,AmaZulu,0,0
+2021-02-17,Kaizer Chiefs,AmaZulu,1,2
+2021-02-17,Sundowns,Baroka FC,2,0
+2021-02-20,Kaizer Chiefs,SuperSport,1,1
+2021-02-20,Chippa Utd,TS Galaxy,1,1
+2021-02-20,Baroka FC,Black Leopards,2,1
+2021-02-21,TTM FC,Stellenbosch FC,1,0
+2021-02-21,Cape Town City,Moroka Swallows,1,1
+2021-02-23,Golden Arrows,Black Leopards,1,2
+2021-02-24,TS Galaxy,Bloem Celtic,1,0
+2021-02-24,SuperSport,Orlando Pirates,1,1
+2021-03-02,AmaZulu,SuperSport,1,0
+2021-03-02,TS Galaxy,Moroka Swallows,2,1
+2021-03-02,Maritzburg Utd,Black Leopards,1,0
+2021-03-02,Orlando Pirates,Bloem Celtic,1,0
+2021-03-03,Chippa Utd,Cape Town City,0,0
+2021-03-03,Golden Arrows,Baroka FC,0,0
+2021-03-05,SuperSport,TS Galaxy,0,0
+2021-03-06,Cape Town City,Stellenbosch FC,1,2
+2021-03-06,Chippa Utd,Orlando Pirates,0,3
+2021-03-06,Bloem Celtic,Maritzburg Utd,1,1
+2021-03-07,Black Leopards,Golden Arrows,1,3
+2021-03-07,Moroka Swallows,TTM FC,1,1
+2021-03-10,TS Galaxy,Black Leopards,3,1
+2021-03-10,Chippa Utd,AmaZulu,0,1
+2021-03-10,TTM FC,Golden Arrows,1,2
+2021-03-10,Baroka FC,Stellenbosch FC,1,3
+2021-03-10,Maritzburg Utd,Kaizer Chiefs,1,1
+2021-03-13,Stellenbosch FC,Sundowns,1,2
+2021-03-19,Stellenbosch FC,SuperSport,1,1
+2021-03-20,Golden Arrows,Cape Town City,1,1
+2021-03-20,Chippa Utd,Moroka Swallows,2,2
+2021-03-20,Baroka FC,Bloem Celtic,1,1
+2021-03-20,TS Galaxy,Maritzburg Utd,0,2
+2021-03-21,Kaizer Chiefs,Orlando Pirates,1,0
+2021-03-21,AmaZulu,TTM FC,2,0
+2021-03-21,Sundowns,Black Leopards,1,1
+2021-04-03,Moroka Swallows,Golden Arrows,1,1
+2021-04-03,Maritzburg Utd,Chippa Utd,5,1
+2021-04-03,Cape Town City,Baroka FC,0,0
+2021-04-04,Black Leopards,AmaZulu,0,1
+2021-04-04,Bloem Celtic,TS Galaxy,2,1
+2021-04-06,TTM FC,Sundowns,1,3
+2021-04-06,Kaizer Chiefs,Stellenbosch FC,2,2
+2021-04-09,Stellenbosch FC,AmaZulu,0,1
+2021-04-10,Cape Town City,SuperSport,3,0
+2021-04-10,TS Galaxy,TTM FC,0,2
+2021-04-11,Golden Arrows,Bloem Celtic,1,1
+2021-04-11,Moroka Swallows,Black Leopards,1,0
+2021-04-12,Chippa Utd,Sundowns,1,2
+2021-04-15,Baroka FC,Kaizer Chiefs,1,1
+2021-04-18,Orlando Pirates,Maritzburg Utd,2,0
+2021-04-20,Chippa Utd,Baroka FC,0,1
+2021-04-20,Bloem Celtic,Moroka Swallows,1,1
+2021-04-21,AmaZulu,Sundowns,0,0
+2021-04-21,Black Leopards,Stellenbosch FC,0,0
+2021-04-21,Kaizer Chiefs,Cape Town City,1,2
+2021-04-21,SuperSport,Golden Arrows,0,1
+2021-04-23,Maritzburg Utd,Baroka FC,1,1
+2021-04-24,Stellenbosch FC,Bloem Celtic,1,1
+2021-04-24,Black Leopards,SuperSport,1,1
+2021-04-24,AmaZulu,TS Galaxy,2,1
+2021-04-24,Cape Town City,TTM FC,3,0
+2021-04-24,Moroka Swallows,Orlando Pirates,1,1
+2021-04-25,Chippa Utd,Golden Arrows,0,0
+2021-04-25,Sundowns,Kaizer Chiefs,1,2
+2021-04-27,Stellenbosch FC,Maritzburg Utd,0,1
+2021-04-27,Moroka Swallows,SuperSport,1,1
+2021-04-28,Kaizer Chiefs,Chippa Utd,0,1
+2021-04-28,TTM FC,Bloem Celtic,1,0
+2021-04-28,Cape Town City,AmaZulu,1,5
+2021-04-28,Sundowns,Golden Arrows,0,0
+2021-04-28,Baroka FC,TS Galaxy,0,1
+2021-04-30,Maritzburg Utd,Moroka Swallows,1,1
+2021-05-01,Bloem Celtic,Kaizer Chiefs,2,2
+2021-05-01,Golden Arrows,AmaZulu,0,1
+2021-05-01,TS Galaxy,Cape Town City,1,0
+2021-05-01,Chippa Utd,Stellenbosch FC,1,0
+2021-05-01,TTM FC,Black Leopards,1,2
+2021-05-01,SuperSport,Baroka FC,1,1
+2021-05-02,Orlando Pirates,Sundowns,0,3
+2021-05-04,TTM FC,Kaizer Chiefs,2,1
+2021-05-05,Sundowns,Maritzburg Utd,2,0
+2021-05-06,Orlando Pirates,Black Leopards,3,0
+2021-05-09,TS Galaxy,Sundowns,0,1
+2021-05-11,AmaZulu,Baroka FC,0,1
+2021-05-11,Stellenbosch FC,Orlando Pirates,0,0
+2021-05-12,Bloem Celtic,Cape Town City,0,0
+2021-05-12,Maritzburg Utd,Golden Arrows,3,2
+2021-05-12,Chippa Utd,Black Leopards,0,0
+2021-05-12,Kaizer Chiefs,Moroka Swallows,1,1
+2021-05-12,SuperSport,TTM FC,1,0
+2021-05-15,TTM FC,Maritzburg Utd,1,0
+2021-05-18,Baroka FC,TTM FC,0,0
+2021-05-18,Moroka Swallows,Stellenbosch FC,0,0
+2021-05-18,Chippa Utd,Bloem Celtic,1,2
+2021-05-19,Golden Arrows,TS Galaxy,3,0
+2021-05-19,Cape Town City,Maritzburg Utd,0,0
+2021-05-26,Black Leopards,Kaizer Chiefs,2,1
+2021-05-26,Sundowns,SuperSport,3,1
+2021-05-27,Orlando Pirates,AmaZulu,1,0
+2021-05-29,Moroka Swallows,Sundowns,0,0
+2021-05-30,TS Galaxy,Orlando Pirates,1,0
+2021-06-02,SuperSport,Maritzburg Utd,2,0
+2021-06-02,Bloem Celtic,Sundowns,0,2
+2021-06-02,Cape Town City,Black Leopards,3,1
+2021-06-02,AmaZulu,Moroka Swallows,1,0
+2021-06-02,Kaizer Chiefs,Golden Arrows,3,2
+2021-06-02,Baroka FC,Orlando Pirates,1,2
+2021-06-02,Stellenbosch FC,TS Galaxy,0,0
+2021-06-02,TTM FC,Chippa Utd,0,0
+2021-06-05,Sundowns,Cape Town City,3,0
+2021-06-05,Orlando Pirates,TTM FC,0,0
+2021-06-05,Golden Arrows,Stellenbosch FC,0,0
+2021-06-05,Moroka Swallows,Baroka FC,1,1
+2021-06-05,TS Galaxy,Kaizer Chiefs,0,1
+2021-06-05,Black Leopards,Bloem Celtic,1,1
+2021-06-05,Maritzburg Utd,AmaZulu,0,0
+2021-06-05,Chippa Utd,SuperSport,1,1
+2021-08-20,Sundowns,AmaZulu,1,0
+2021-08-21,Orlando Pirates,Stellenbosch FC,2,2
+2021-08-21,Golden Arrows,Maritzburg Utd,2,1
+2021-08-21,Sekhukhune United FC,Chippa Utd,0,1
+2021-08-21,Baroka FC,Marumo Gallants FC,2,0
+2021-08-21,Cape Town City,SuperSport,0,0
+2021-08-22,Moroka Swallows,Royal Eagles FC,1,0
+2021-08-22,TS Galaxy,Kaizer Chiefs,0,0
+2021-08-24,Marumo Gallants FC,Orlando Pirates,0,0
+2021-08-24,Chippa Utd,Sundowns,0,0
+2021-08-25,SuperSport,Golden Arrows,3,1
+2021-08-25,AmaZulu,Moroka Swallows,0,0
+2021-08-25,Maritzburg Utd,Sekhukhune United FC,0,2
+2021-08-25,Stellenbosch FC,TS Galaxy,1,0
+2021-08-25,Royal Eagles FC,Cape Town City,1,2
+2021-08-25,Kaizer Chiefs,Baroka FC,2,1
+2021-09-11,TS Galaxy,Golden Arrows,2,2
+2021-09-11,Orlando Pirates,Moroka Swallows,1,0
+2021-09-11,Sekhukhune United FC,Stellenbosch FC,1,1
+2021-09-11,Baroka FC,Maritzburg Utd,0,1
+2021-09-12,Royal Eagles FC,Chippa Utd,1,0
+2021-09-12,Sundowns,Kaizer Chiefs,2,0
+2021-09-14,AmaZulu,SuperSport,0,0
+2021-09-18,Chippa Utd,Orlando Pirates,1,3
+2021-09-18,Cape Town City,Stellenbosch FC,0,3
+2021-09-18,Baroka FC,Sekhukhune United FC,1,0
+2021-09-18,Kaizer Chiefs,Royal Eagles FC,1,4
+2021-09-19,Moroka Swallows,SuperSport,0,3
+2021-09-19,Sundowns,TS Galaxy,3,0
+2021-09-22,Golden Arrows,AmaZulu,2,2
+2021-09-22,Maritzburg Utd,Marumo Gallants FC,1,0
+2021-09-24,Moroka Swallows,Cape Town City,0,0
+2021-09-25,Sekhukhune United FC,Golden Arrows,1,1
+2021-09-25,AmaZulu,Baroka FC,1,0
+2021-09-25,Orlando Pirates,Sundowns,0,2
+2021-09-25,Stellenbosch FC,Chippa Utd,2,1
+2021-09-25,SuperSport,Maritzburg Utd,2,1
+2021-09-26,Royal Eagles FC,TS Galaxy,4,2
+2021-09-26,Marumo Gallants FC,Kaizer Chiefs,0,0
+2021-10-02,Chippa Utd,SuperSport,0,0
+2021-10-02,TS Galaxy,Sekhukhune United FC,0,1
+2021-10-02,AmaZulu,Kaizer Chiefs,1,1
+2021-10-02,Baroka FC,Stellenbosch FC,1,1
+2021-10-02,Cape Town City,Orlando Pirates,1,1
+2021-10-03,Royal Eagles FC,Maritzburg Utd,2,1
+2021-10-03,Golden Arrows,Marumo Gallants FC,3,1
+2021-10-03,Sundowns,Moroka Swallows,3,0
+2021-10-16,Sekhukhune United FC,Cape Town City,1,0
+2021-10-16,SuperSport,Baroka FC,2,0
+2021-10-16,Kaizer Chiefs,Chippa Utd,4,0
+2021-10-17,Moroka Swallows,Stellenbosch FC,1,1
+2021-10-19,Marumo Gallants FC,Royal Eagles FC,2,2
+2021-10-19,TS Galaxy,AmaZulu,0,1
+2021-10-20,Golden Arrows,Sundowns,0,1
+2021-10-20,Maritzburg Utd,Orlando Pirates,0,0
+2021-10-23,Maritzburg Utd,TS Galaxy,1,0
+2021-10-23,Cape Town City,Golden Arrows,4,3
+2021-10-24,Chippa Utd,Moroka Swallows,0,0
+2021-10-24,SuperSport,Kaizer Chiefs,1,2
+2021-10-27,Stellenbosch FC,Marumo Gallants FC,1,0
+2021-10-27,Sekhukhune United FC,AmaZulu,2,0
+2021-10-28,Orlando Pirates,Royal Eagles FC,1,1
+2021-11-02,Kaizer Chiefs,Stellenbosch FC,0,1
+2021-11-02,TS Galaxy,Baroka FC,2,1
+2021-11-02,Golden Arrows,Moroka Swallows,0,0
+2021-11-02,Royal Eagles FC,SuperSport,2,1
+2021-11-02,Orlando Pirates,Sekhukhune United FC,2,1
+2021-11-03,Cape Town City,Chippa Utd,1,0
+2021-11-03,Sundowns,Maritzburg Utd,1,0
+2021-11-04,AmaZulu,Marumo Gallants FC,0,0
+2021-11-05,SuperSport,TS Galaxy,2,1
+2021-11-06,Kaizer Chiefs,Orlando Pirates,2,1
+2021-11-06,Stellenbosch FC,Golden Arrows,0,0
+2021-11-07,Chippa Utd,Maritzburg Utd,0,0
+2021-11-07,Moroka Swallows,Sekhukhune United FC,0,1
+2021-11-07,Royal Eagles FC,Baroka FC,1,1
+2021-11-07,Marumo Gallants FC,Sundowns,0,4
+2021-11-07,AmaZulu,Cape Town City,2,0
+2021-11-20,Golden Arrows,Orlando Pirates,0,0
+2021-11-20,Stellenbosch FC,AmaZulu,2,2
+2021-11-20,Baroka FC,Chippa Utd,0,1
+2021-11-20,SuperSport,Marumo Gallants FC,1,2
+2021-11-20,Sekhukhune United FC,Royal Eagles FC,1,0
+2021-11-20,Cape Town City,Sundowns,0,0
+2021-11-21,TS Galaxy,Moroka Swallows,1,0
+2021-11-21,Maritzburg Utd,Kaizer Chiefs,0,1
+2021-11-24,Marumo Gallants FC,Maritzburg Utd,0,0
+2021-11-24,Kaizer Chiefs,AmaZulu,1,1
+2021-11-24,Stellenbosch FC,Orlando Pirates,0,3
+2021-11-24,Sundowns,SuperSport,2,2
+2021-11-27,Sundowns,Sekhukhune United FC,2,0
+2021-11-27,TS Galaxy,Cape Town City,2,2
+2021-11-28,Golden Arrows,Baroka FC,3,2
+2021-11-28,Royal Eagles FC,Stellenbosch FC,1,0
+2021-11-28,Moroka Swallows,Kaizer Chiefs,1,3
+2021-11-28,Maritzburg Utd,AmaZulu,1,1
+2021-12-01,Marumo Gallants FC,TS Galaxy,3,1
+2021-12-02,Orlando Pirates,Baroka FC,0,0
+2021-12-04,AmaZulu,Royal Eagles FC,0,0
+2021-12-04,Chippa Utd,Golden Arrows,1,2
+2021-12-04,Moroka Swallows,Maritzburg Utd,1,1
+2021-12-04,Stellenbosch FC,Sundowns,1,1
+2021-12-05,SuperSport,Sekhukhune United FC,0,1
+2021-12-07,TS Galaxy,Chippa Utd,3,1
+2021-12-07,Cape Town City,Maritzburg Utd,3,2
+2021-12-08,Sundowns,Royal Eagles FC,3,2
+2021-12-08,Sekhukhune United FC,Marumo Gallants FC,0,1
+2021-12-08,Baroka FC,Moroka Swallows,0,1
+2021-12-08,Stellenbosch FC,SuperSport,0,1
+2021-12-08,AmaZulu,Orlando Pirates,1,1
+2021-12-11,Moroka Swallows,Marumo Gallants FC,0,1
+2021-12-11,Chippa Utd,AmaZulu,1,1
+2021-12-11,Baroka FC,Cape Town City,0,0
+2021-12-11,Orlando Pirates,TS Galaxy,2,0
+2021-12-11,SuperSport,Sundowns,0,1
+2021-12-12,Royal Eagles FC,Golden Arrows,0,0
+2021-12-12,Maritzburg Utd,Stellenbosch FC,0,0
+2021-12-12,Kaizer Chiefs,Sekhukhune United FC,2,0
+2021-12-14,AmaZulu,Chippa Utd,2,2
+2021-12-14,Marumo Gallants FC,Cape Town City,0,0
+2021-12-14,Sundowns,Baroka FC,2,1
+2021-12-14,Moroka Swallows,Orlando Pirates,1,1
+2021-12-17,Marumo Gallants FC,AmaZulu,0,1
+2021-12-17,Sundowns,Orlando Pirates,4,1
+2021-12-18,Stellenbosch FC,Baroka FC,1,0
+2021-12-18,Golden Arrows,TS Galaxy,1,1
+2021-12-18,Sekhukhune United FC,SuperSport,0,0
+2021-12-18,Cape Town City,Moroka Swallows,2,1
+2021-12-19,Royal Eagles FC,Kaizer Chiefs,1,0
+2021-12-19,Maritzburg Utd,Chippa Utd,0,2
+2021-12-20,Orlando Pirates,Marumo Gallants FC,2,1
+2021-12-20,AmaZulu,Sundowns,1,0
+2021-12-22,TS Galaxy,Stellenbosch FC,0,1
+2021-12-22,Baroka FC,Royal Eagles FC,1,0
+2021-12-22,Chippa Utd,Sekhukhune United FC,0,0
+2021-12-22,Moroka Swallows,Golden Arrows,2,2
+2021-12-22,SuperSport,Cape Town City,3,2
+2021-12-22,Kaizer Chiefs,Maritzburg Utd,2,0
+2021-12-23,Sundowns,Marumo Gallants FC,1,1
+2021-12-23,Orlando Pirates,AmaZulu,2,1
+2022-02-07,Sundowns,Chippa Utd,2,0
+2022-02-14,Baroka FC,Sundowns,1,1
+2022-02-15,Royal Eagles FC,Sekhukhune United FC,1,0
+2022-02-15,Cape Town City,Kaizer Chiefs,0,0
+2022-02-15,Maritzburg Utd,SuperSport,2,1
+2022-02-16,Stellenbosch FC,Moroka Swallows,1,1
+2022-02-16,Orlando Pirates,Golden Arrows,0,0
+2022-02-19,Chippa Utd,Royal Eagles FC,2,2
+2022-02-19,Moroka Swallows,TS Galaxy,0,1
+2022-02-20,Golden Arrows,Cape Town City,0,1
+2022-02-20,Sekhukhune United FC,Baroka FC,4,0
+2022-02-22,AmaZulu,TS Galaxy,0,0
+2022-02-25,Maritzburg Utd,Golden Arrows,1,2
+2022-02-26,Chippa Utd,Marumo Gallants FC,2,3
+2022-02-26,Sekhukhune United FC,Moroka Swallows,0,1
+2022-02-26,Baroka FC,Kaizer Chiefs,0,1
+2022-02-27,SuperSport,Royal Eagles FC,0,2
+2022-03-02,Marumo Gallants FC,Baroka FC,3,0
+2022-03-02,Orlando Pirates,Cape Town City,0,0
+2022-03-02,AmaZulu,Stellenbosch FC,2,2
+2022-03-02,TS Galaxy,Sundowns,0,3
+2022-03-05,Baroka FC,TS Galaxy,1,0
+2022-03-05,Orlando Pirates,Kaizer Chiefs,1,2
+2022-03-05,Cape Town City,Sekhukhune United FC,2,1
+2022-03-05,SuperSport,AmaZulu,2,0
+2022-03-05,Maritzburg Utd,Sundowns,2,1
+2022-03-06,Golden Arrows,Chippa Utd,1,2
+2022-03-06,Royal Eagles FC,Moroka Swallows,1,0
+2022-03-06,Marumo Gallants FC,Stellenbosch FC,1,0
+2022-03-16,Marumo Gallants FC,Chippa Utd,0,0
+2022-03-16,Sekhukhune United FC,Maritzburg Utd,1,1
+2022-03-16,Orlando Pirates,SuperSport,3,2
+2022-03-19,TS Galaxy,SuperSport,1,1
+2022-03-19,Cape Town City,Marumo Gallants FC,1,0
+2022-03-19,Kaizer Chiefs,Golden Arrows,0,1
+2022-03-20,Stellenbosch FC,Royal Eagles FC,2,2
+2022-04-02,TS Galaxy,Royal Eagles FC,1,4
+2022-04-02,Stellenbosch FC,Sekhukhune United FC,1,1
+2022-04-02,Chippa Utd,Kaizer Chiefs,1,3
+2022-04-02,Golden Arrows,SuperSport,3,2
+2022-04-03,Cape Town City,Baroka FC,5,1
+2022-04-05,SuperSport,Chippa Utd,1,1
+2022-04-05,Kaizer Chiefs,TS Galaxy,0,0
+2022-04-06,Golden Arrows,Stellenbosch FC,0,2
+2022-04-06,Royal Eagles FC,Marumo Gallants FC,2,0
+2022-04-06,Baroka FC,AmaZulu,0,1
+2022-04-06,Sekhukhune United FC,Orlando Pirates,0,1
+2022-04-06,Moroka Swallows,Sundowns,2,4
+2022-04-06,Maritzburg Utd,Cape Town City,0,1
+2022-04-12,Sundowns,Golden Arrows,6,0
+2022-04-12,Baroka FC,Orlando Pirates,0,0
+2022-04-12,Maritzburg Utd,Moroka Swallows,1,1
+2022-04-16,Sekhukhune United FC,TS Galaxy,0,1
+2022-04-16,AmaZulu,Maritzburg Utd,1,0
+2022-04-16,Cape Town City,Royal Eagles FC,1,1
+2022-04-16,Kaizer Chiefs,SuperSport,0,1
+2022-04-17,Chippa Utd,Stellenbosch FC,1,0
+2022-04-17,Marumo Gallants FC,Moroka Swallows,1,1
+2022-04-23,TS Galaxy,Maritzburg Utd,1,1
+2022-04-23,Golden Arrows,Sekhukhune United FC,0,0
+2022-04-23,Stellenbosch FC,Kaizer Chiefs,1,0
+2022-04-23,Marumo Gallants FC,SuperSport,0,0
+2022-04-24,Moroka Swallows,Baroka FC,3,2
+2022-04-24,Royal Eagles FC,AmaZulu,0,0
+2022-04-27,Golden Arrows,Kaizer Chiefs,2,1
+2022-04-27,Orlando Pirates,Chippa Utd,0,0
+2022-04-27,Sundowns,Cape Town City,0,0
+2022-04-30,Kaizer Chiefs,Cape Town City,1,2
+2022-05-02,TS Galaxy,Orlando Pirates,1,0
+2022-05-03,SuperSport,Stellenbosch FC,0,0
+2022-05-03,Moroka Swallows,AmaZulu,0,1
+2022-05-03,Sekhukhune United FC,Sundowns,0,2
+2022-05-03,Kaizer Chiefs,Marumo Gallants FC,1,0
+2022-05-04,Chippa Utd,Cape Town City,0,0
+2022-05-04,Baroka FC,Golden Arrows,1,0
+2022-05-04,Maritzburg Utd,Royal Eagles FC,1,0
+2022-05-06,SuperSport,Moroka Swallows,2,2
+2022-05-07,Chippa Utd,Baroka FC,2,2
+2022-05-07,Marumo Gallants FC,Golden Arrows,0,0
+2022-05-07,AmaZulu,Sekhukhune United FC,0,0
+2022-05-07,Stellenbosch FC,Maritzburg Utd,1,1
+2022-05-07,Cape Town City,TS Galaxy,2,0
+2022-05-08,Kaizer Chiefs,Sundowns,1,1
+2022-05-14,TS Galaxy,Marumo Gallants FC,0,0
+2022-05-14,Moroka Swallows,Chippa Utd,0,0
+2022-05-14,Golden Arrows,Royal Eagles FC,2,2
+2022-05-14,Cape Town City,AmaZulu,0,0
+2022-05-14,Sundowns,Stellenbosch FC,0,3
+2022-05-14,Baroka FC,SuperSport,3,1
+2022-05-14,Sekhukhune United FC,Kaizer Chiefs,0,1
+2022-05-21,Maritzburg Utd,Baroka FC,1,0
+2022-05-21,Marumo Gallants FC,Sekhukhune United FC,2,2
+2022-05-21,Chippa Utd,TS Galaxy,0,1
+2022-05-21,Kaizer Chiefs,Moroka Swallows,2,2
+2022-05-21,Stellenbosch FC,Cape Town City,1,0
+2022-05-23,Royal Eagles FC,Sundowns,2,3
+2022-05-24,AmaZulu,Golden Arrows,1,2
+2022-05-24,Orlando Pirates,Maritzburg Utd,4,1
+2022-05-27,Royal Eagles FC,Orlando Pirates,2,2
+2022-05-30,SuperSport,Orlando Pirates,2,0
+2022-08-05,Cape Town City,Sundowns,0,2
+2022-08-06,Golden Arrows,Richards Bay FC,0,2
+2022-08-06,Marumo Gallants FC,Stellenbosch FC,0,0
+2022-08-06,Orlando Pirates,Moroka Swallows,1,0
+2022-08-06,Royal Eagles FC,Kaizer Chiefs,1,0
+2022-08-06,Maritzburg Utd,Sekhukhune United FC,1,1
+2022-08-07,TS Galaxy,AmaZulu,0,0
+2022-08-07,SuperSport,Chippa Utd,1,1
+2022-08-09,Richards Bay FC,Marumo Gallants FC,0,0
+2022-08-09,Moroka Swallows,Cape Town City,3,2
+2022-08-09,Kaizer Chiefs,Maritzburg Utd,3,0
+2022-08-10,AmaZulu,SuperSport,2,1
+2022-08-10,Chippa Utd,Royal Eagles FC,1,3
+2022-08-10,Sekhukhune United FC,Golden Arrows,1,0
+2022-08-10,Stellenbosch FC,Orlando Pirates,1,1
+2022-08-10,Sundowns,TS Galaxy,0,1
+2022-08-12,Maritzburg Utd,Moroka Swallows,0,0
+2022-08-13,Sundowns,Kaizer Chiefs,4,0
+2022-08-13,Stellenbosch FC,Royal Eagles FC,3,1
+2022-08-13,Marumo Gallants FC,Golden Arrows,1,1
+2022-08-13,Richards Bay FC,Sekhukhune United FC,1,0
+2022-08-13,AmaZulu,Cape Town City,2,1
+2022-08-14,Orlando Pirates,Chippa Utd,0,1
+2022-08-14,TS Galaxy,SuperSport,2,0
+2022-08-16,Cape Town City,Maritzburg Utd,0,0
+2022-08-17,Royal Eagles FC,Orlando Pirates,0,1
+2022-08-19,Moroka Swallows,AmaZulu,2,3
+2022-08-20,Golden Arrows,TS Galaxy,0,0
+2022-08-20,Sekhukhune United FC,Sundowns,1,1
+2022-08-20,Cape Town City,Stellenbosch FC,1,1
+2022-08-20,Maritzburg Utd,Chippa Utd,2,1
+2022-08-20,Kaizer Chiefs,Richards Bay FC,1,0
+2022-08-21,Royal Eagles FC,Marumo Gallants FC,2,2
+2022-08-21,SuperSport,Orlando Pirates,0,0
+2022-08-23,Moroka Swallows,Sekhukhune United FC,2,1
+2022-08-23,Cape Town City,Kaizer Chiefs,2,0
+2022-08-24,Sundowns,Stellenbosch FC,3,0
+2022-08-24,AmaZulu,Golden Arrows,0,1
+2022-08-24,Chippa Utd,TS Galaxy,0,0
+2022-08-24,Orlando Pirates,Marumo Gallants FC,1,0
+2022-08-24,Richards Bay FC,SuperSport,0,1
+2022-08-24,Royal Eagles FC,Maritzburg Utd,1,0
+2022-09-02,SuperSport,Sundowns,2,1
+2022-09-03,Golden Arrows,Chippa Utd,3,2
+2022-09-03,Stellenbosch FC,Richards Bay FC,1,2
+2022-09-03,Kaizer Chiefs,AmaZulu,0,0
+2022-09-03,Sekhukhune United FC,Royal Eagles FC,1,2
+2022-09-03,TS Galaxy,Cape Town City,0,1
+2022-09-04,Marumo Gallants FC,Moroka Swallows,1,1
+2022-09-04,Maritzburg Utd,Orlando Pirates,1,0
+2022-09-06,Royal Eagles FC,Richards Bay FC,0,1
+2022-09-06,Cape Town City,Sekhukhune United FC,0,0
+2022-09-07,Chippa Utd,Sundowns,0,1
+2022-09-09,Maritzburg Utd,SuperSport,1,2
+2022-09-10,Moroka Swallows,Stellenbosch FC,1,2
+2022-09-10,AmaZulu,Chippa Utd,1,2
+2022-09-10,Orlando Pirates,TS Galaxy,2,0
+2022-09-10,Sundowns,Golden Arrows,2,1
+2022-09-11,Marumo Gallants FC,Kaizer Chiefs,1,1
+2022-09-17,Chippa Utd,Marumo Gallants FC,1,0
+2022-09-17,Golden Arrows,Moroka Swallows,4,0
+2022-09-17,Sekhukhune United FC,Stellenbosch FC,1,1
+2022-09-17,Kaizer Chiefs,SuperSport,2,1
+2022-09-18,Sundowns,AmaZulu,1,0
+2022-09-18,Richards Bay FC,TS Galaxy,0,0
+2022-10-04,Sekhukhune United FC,Orlando Pirates,2,0
+2022-10-04,Golden Arrows,Cape Town City,1,1
+2022-10-04,TS Galaxy,Marumo Gallants FC,0,1
+2022-10-04,Stellenbosch FC,Maritzburg Utd,3,0
+2022-10-04,SuperSport,Royal Eagles FC,3,1
+2022-10-05,AmaZulu,Richards Bay FC,0,1
+2022-10-05,Moroka Swallows,Kaizer Chiefs,1,2
+2022-10-07,SuperSport,Sekhukhune United FC,3,1
+2022-10-08,TS Galaxy,Moroka Swallows,0,0
+2022-10-08,Orlando Pirates,Richards Bay FC,0,0
+2022-10-09,Stellenbosch FC,Kaizer Chiefs,1,3
+2022-10-14,Orlando Pirates,AmaZulu,1,1
+2022-10-14,Golden Arrows,Stellenbosch FC,1,1
+2022-10-15,Richards Bay FC,Maritzburg Utd,0,0
+2022-10-15,Kaizer Chiefs,Chippa Utd,1,2
+2022-10-18,Chippa Utd,Sekhukhune United FC,1,0
+2022-10-18,Stellenbosch FC,SuperSport,0,2
+2022-10-18,Golden Arrows,Orlando Pirates,0,2
+2022-10-19,AmaZulu,Maritzburg Utd,1,1
+2022-10-19,Richards Bay FC,Cape Town City,1,0
+2022-10-19,Moroka Swallows,Royal Eagles FC,2,0
+2022-10-19,Kaizer Chiefs,TS Galaxy,2,2
+2022-10-19,Sundowns,Marumo Gallants FC,1,0
+2022-10-25,Royal Eagles FC,Golden Arrows,3,1
+2022-10-25,Maritzburg Utd,Sundowns,0,5
+2022-10-25,Cape Town City,Chippa Utd,2,1
+2022-10-26,Marumo Gallants FC,AmaZulu,0,0
+2022-10-28,Maritzburg Utd,Golden Arrows,0,2
+2022-10-29,Orlando Pirates,Kaizer Chiefs,0,1
+2022-10-29,Marumo Gallants FC,Cape Town City,2,1
+2022-10-29,Royal Eagles FC,Sundowns,0,3
+2022-10-30,TS Galaxy,Sekhukhune United FC,1,1
+2022-10-30,Chippa Utd,Richards Bay FC,3,3
+2022-10-30,AmaZulu,Stellenbosch FC,1,0
+2022-10-30,SuperSport,Moroka Swallows,1,1
+2022-12-30,Sundowns,Orlando Pirates,2,0
+2022-12-30,Stellenbosch FC,Chippa Utd,1,1
+2022-12-30,Cape Town City,Royal Eagles FC,2,1
+2022-12-30,Maritzburg Utd,TS Galaxy,1,2
+2022-12-30,SuperSport,Marumo Gallants FC,1,0
+2022-12-31,Richards Bay FC,Moroka Swallows,1,0
+2022-12-31,Golden Arrows,Kaizer Chiefs,0,2
+2022-12-31,Sekhukhune United FC,AmaZulu,0,0
+2023-01-03,Cape Town City,SuperSport,0,1
+2023-01-03,Sundowns,Moroka Swallows,2,0
+2023-01-03,Sekhukhune United FC,Marumo Gallants FC,3,2
+2023-01-03,Royal Eagles FC,TS Galaxy,0,0
+2023-01-06,Moroka Swallows,Chippa Utd,2,0
+2023-01-06,Richards Bay FC,Sundowns,0,2
+2023-01-07,Golden Arrows,SuperSport,2,1
+2023-01-07,Marumo Gallants FC,Maritzburg Utd,0,1
+2023-01-07,Cape Town City,Orlando Pirates,2,1
+2023-01-07,Kaizer Chiefs,Sekhukhune United FC,0,1
+2023-01-08,Royal Eagles FC,AmaZulu,2,0
+2023-01-08,TS Galaxy,Stellenbosch FC,0,0
+2023-01-10,Sundowns,Chippa Utd,2,1
+2023-01-11,Stellenbosch FC,Marumo Gallants FC,1,1
+2023-01-13,AmaZulu,Kaizer Chiefs,4,0
+2023-01-14,Marumo Gallants FC,Richards Bay FC,0,2
+2023-01-14,Orlando Pirates,Golden Arrows,3,1
+2023-01-14,Stellenbosch FC,Sekhukhune United FC,0,1
+2023-01-14,Chippa Utd,Cape Town City,1,1
+2023-01-15,Moroka Swallows,TS Galaxy,0,0
+2023-01-15,Maritzburg Utd,Royal Eagles FC,3,1
+2023-01-16,Sundowns,SuperSport,1,0
+2023-01-20,Sekhukhune United FC,Moroka Swallows,1,0
+2023-01-20,Cape Town City,TS Galaxy,1,0
+2023-01-21,Golden Arrows,Maritzburg Utd,0,1
+2023-01-21,Royal Eagles FC,Chippa Utd,1,1
+2023-01-21,Kaizer Chiefs,Sundowns,0,1
+2023-01-21,AmaZulu,Marumo Gallants FC,1,1
+2023-01-22,Orlando Pirates,Stellenbosch FC,4,1
+2023-01-22,SuperSport,Richards Bay FC,1,1
+2023-01-24,TS Galaxy,Sundowns,1,2
+2023-01-25,Golden Arrows,Marumo Gallants FC,3,2
+2023-01-27,Stellenbosch FC,Cape Town City,3,2
+2023-01-28,Sundowns,Sekhukhune United FC,2,0
+2023-01-28,Moroka Swallows,SuperSport,0,0
+2023-01-28,Marumo Gallants FC,Orlando Pirates,0,2
+2023-01-29,Chippa Utd,Maritzburg Utd,1,0
+2023-01-29,Richards Bay FC,AmaZulu,1,1
+2023-01-29,Kaizer Chiefs,Royal Eagles FC,2,0
+2023-01-29,TS Galaxy,Golden Arrows,4,0
+2023-02-03,Moroka Swallows,Richards Bay FC,1,0
+2023-02-03,Maritzburg Utd,AmaZulu,1,1
+2023-02-04,Golden Arrows,Royal Eagles FC,1,2
+2023-02-04,Orlando Pirates,Sundowns,0,1
+2023-02-04,Chippa Utd,Stellenbosch FC,1,2
+2023-02-04,SuperSport,Cape Town City,2,0
+2023-02-04,Marumo Gallants FC,Sekhukhune United FC,2,0
+2023-02-05,TS Galaxy,Kaizer Chiefs,0,0
+2023-02-17,Orlando Pirates,Maritzburg Utd,2,1
+2023-02-18,Royal Eagles FC,SuperSport,1,1
+2023-02-18,Sekhukhune United FC,Richards Bay FC,2,0
+2023-02-18,AmaZulu,TS Galaxy,1,2
+2023-02-19,Kaizer Chiefs,Golden Arrows,2,3
+2023-02-19,Cape Town City,Moroka Swallows,2,0
+2023-02-24,SuperSport,Maritzburg Utd,2,0
+2023-02-25,Kaizer Chiefs,Orlando Pirates,1,0
+2023-02-25,Richards Bay FC,Stellenbosch FC,1,2
+2023-02-25,Sekhukhune United FC,Cape Town City,0,1
+2023-02-25,AmaZulu,Royal Eagles FC,1,1
+2023-02-26,Chippa Utd,Moroka Swallows,1,2
+2023-03-03,Moroka Swallows,Orlando Pirates,1,4
+2023-03-04,Richards Bay FC,Kaizer Chiefs,0,1
+2023-03-04,Royal Eagles FC,Sekhukhune United FC,2,0
+2023-03-04,Maritzburg Utd,Cape Town City,1,2
+2023-03-05,Stellenbosch FC,Sundowns,1,1
+2023-03-05,Marumo Gallants FC,TS Galaxy,0,0
+2023-03-05,Chippa Utd,AmaZulu,0,2
+2023-03-05,SuperSport,Golden Arrows,2,1
+2023-03-14,Cape Town City,Marumo Gallants FC,2,2
+2023-03-14,Sundowns,Royal Eagles FC,5,1
+2023-03-17,Stellenbosch FC,AmaZulu,2,0
+2023-03-17,Moroka Swallows,Golden Arrows,0,1
+2023-03-18,Sekhukhune United FC,Chippa Utd,1,1
+2023-03-18,Orlando Pirates,SuperSport,1,0
+2023-03-18,Maritzburg Utd,Kaizer Chiefs,2,3
+2023-03-19,TS Galaxy,Richards Bay FC,4,0
+2023-04-01,Richards Bay FC,Orlando Pirates,0,2
+2023-04-01,Kaizer Chiefs,Stellenbosch FC,2,1
+2023-04-01,Chippa Utd,SuperSport,1,1
+2023-04-01,AmaZulu,Moroka Swallows,0,1
+2023-04-02,Golden Arrows,Sekhukhune United FC,0,0
+2023-04-02,TS Galaxy,Maritzburg Utd,1,2
+2023-04-04,Sundowns,Cape Town City,0,0
+2023-04-05,Marumo Gallants FC,Royal Eagles FC,3,1
+2023-04-07,SuperSport,TS Galaxy,2,0
+2023-04-08,Richards Bay FC,Golden Arrows,0,1
+2023-04-08,Chippa Utd,Orlando Pirates,0,2
+2023-04-08,Sekhukhune United FC,Maritzburg Utd,1,0
+2023-04-08,Kaizer Chiefs,Marumo Gallants FC,1,1
+2023-04-09,Royal Eagles FC,Stellenbosch FC,3,1
+2023-04-09,Moroka Swallows,Sundowns,0,0
+2023-04-09,Cape Town City,AmaZulu,2,2
+2023-04-12,Marumo Gallants FC,Chippa Utd,3,1
+2023-04-12,Golden Arrows,Sundowns,1,1
+2023-04-18,Marumo Gallants FC,SuperSport,0,0
+2023-04-21,Maritzburg Utd,Richards Bay FC,1,1
+2023-04-22,Orlando Pirates,Cape Town City,2,1
+2023-04-22,TS Galaxy,Royal Eagles FC,1,1
+2023-04-22,Stellenbosch FC,Moroka Swallows,3,0
+2023-04-23,Sekhukhune United FC,Kaizer Chiefs,1,0
+2023-04-23,SuperSport,AmaZulu,2,1
+2023-04-25,Sundowns,Richards Bay FC,1,0
+2023-04-27,Chippa Utd,Kaizer Chiefs,0,1
+2023-04-27,Moroka Swallows,Maritzburg Utd,1,0
+2023-04-29,Royal Eagles FC,Cape Town City,1,2
+2023-04-29,Stellenbosch FC,Golden Arrows,5,2
+2023-04-29,AmaZulu,Sekhukhune United FC,2,0
+2023-04-30,TS Galaxy,Orlando Pirates,1,2
+2023-05-01,Kaizer Chiefs,Moroka Swallows,1,2
+2023-05-02,SuperSport,Stellenbosch FC,0,0
+2023-05-03,Orlando Pirates,Royal Eagles FC,1,1
+2023-05-03,Sekhukhune United FC,TS Galaxy,1,1
+2023-05-03,AmaZulu,Sundowns,2,2
+2023-05-03,Cape Town City,Golden Arrows,0,0
+2023-05-03,Maritzburg Utd,Marumo Gallants FC,2,2
+2023-05-03,Richards Bay FC,Chippa Utd,2,3
+2023-05-06,Marumo Gallants FC,Sundowns,0,2
+2023-05-13,Orlando Pirates,Sekhukhune United FC,1,1
+2023-05-13,SuperSport,Kaizer Chiefs,1,0
+2023-05-13,Maritzburg Utd,Stellenbosch FC,1,0
+2023-05-13,Cape Town City,Richards Bay FC,2,0
+2023-05-13,Royal Eagles FC,Moroka Swallows,0,1
+2023-05-13,Golden Arrows,AmaZulu,1,0
+2023-05-13,TS Galaxy,Chippa Utd,4,0
+2023-05-16,Sundowns,Maritzburg Utd,1,1
+2023-05-20,Richards Bay FC,Royal Eagles FC,0,0
+2023-05-20,Stellenbosch FC,TS Galaxy,2,1
+2023-05-20,Sekhukhune United FC,SuperSport,1,0
+2023-05-20,AmaZulu,Orlando Pirates,0,4
+2023-05-20,Kaizer Chiefs,Cape Town City,0,1
+2023-05-20,Moroka Swallows,Marumo Gallants FC,2,0
+2023-05-20,Chippa Utd,Golden Arrows,0,0
+2023-08-04,Sekhukhune United FC,Sundowns,1,2
+2023-08-05,Golden Arrows,Moroka Swallows,1,1
+2023-08-05,SuperSport,Richards Bay FC,2,0
+2023-08-05,Royal Eagles FC,AmaZulu,0,0
+2023-08-05,Stellenbosch FC,Orlando Pirates,1,0
+2023-08-06,Kaizer Chiefs,Chippa Utd,0,0
+2023-08-06,TS Galaxy,Ajax Cape Town,1,0
+2023-08-06,Cape Town City,Polokwane City,1,0
+2023-08-08,Richards Bay FC,Golden Arrows,1,2
+2023-08-08,Orlando Pirates,Royal Eagles FC,4,2
+2023-08-09,Moroka Swallows,Cape Town City,0,1
+2023-08-09,Sundowns,Kaizer Chiefs,2,1
+2023-08-09,AmaZulu,SuperSport,0,0
+2023-08-09,Chippa Utd,TS Galaxy,0,0
+2023-08-09,Ajax Cape Town,Sekhukhune United FC,0,2
+2023-08-09,Polokwane City,Stellenbosch FC,1,0
+2023-08-15,Sundowns,Golden Arrows,4,0
+2023-08-15,Chippa Utd,Orlando Pirates,1,1
+2023-08-16,Sekhukhune United FC,Moroka Swallows,1,2
+2023-08-18,SuperSport,Cape Town City,1,0
+2023-08-18,Royal Eagles FC,Stellenbosch FC,1,3
+2023-08-19,Polokwane City,Ajax Cape Town,3,1
+2023-08-19,AmaZulu,Richards Bay FC,0,0
+2023-08-19,Chippa Utd,Sundowns,0,2
+2023-08-20,TS Galaxy,Kaizer Chiefs,1,0
+2023-08-23,Richards Bay FC,Sundowns,0,1
+2023-08-23,Cape Town City,Sekhukhune United FC,0,1
+2023-08-25,Ajax Cape Town,Chippa Utd,0,1
+2023-08-26,Golden Arrows,Polokwane City,3,2
+2023-08-26,Kaizer Chiefs,AmaZulu,3,0
+2023-08-26,Stellenbosch FC,SuperSport,1,2
+2023-08-27,Royal Eagles FC,TS Galaxy,1,0
+2023-08-29,SuperSport,Golden Arrows,0,3
+2023-08-29,Orlando Pirates,Cape Town City,2,0
+2023-08-30,Polokwane City,Sundowns,0,2
+2023-08-30,Richards Bay FC,Sekhukhune United FC,1,1
+2023-08-30,AmaZulu,TS Galaxy,1,0
+2023-08-30,Moroka Swallows,Ajax Cape Town,3,1
+2023-08-30,Chippa Utd,Royal Eagles FC,2,3
+2023-08-30,Stellenbosch FC,Kaizer Chiefs,0,2
+2023-09-15,Moroka Swallows,Richards Bay FC,0,1
+2023-09-16,Golden Arrows,Stellenbosch FC,0,0
+2023-09-16,Kaizer Chiefs,Royal Eagles FC,0,0
+2023-09-17,AmaZulu,Cape Town City,3,2
+2023-09-19,Stellenbosch FC,Moroka Swallows,0,2
+2023-09-19,Ajax Cape Town,Golden Arrows,1,2
+2023-09-19,Richards Bay FC,Chippa Utd,1,2
+2023-09-20,Royal Eagles FC,Sekhukhune United FC,0,1
+2023-09-20,SuperSport,Kaizer Chiefs,1,0
+2023-09-20,TS Galaxy,Cape Town City,0,0
+2023-09-20,Orlando Pirates,Sundowns,0,1
+2023-09-25,Polokwane City,AmaZulu,0,0
+2023-09-26,Chippa Utd,SuperSport,1,0
+2023-09-27,Sundowns,Stellenbosch FC,3,1
+2023-09-27,Kaizer Chiefs,Sekhukhune United FC,2,1
+2023-09-29,Moroka Swallows,AmaZulu,2,1
+2023-09-30,Cape Town City,Ajax Cape Town,3,1
+2023-09-30,Polokwane City,Royal Eagles FC,1,0
+2023-10-01,TS Galaxy,Richards Bay FC,1,1
+2023-10-03,Kaizer Chiefs,Cape Town City,0,1
+2023-10-04,Moroka Swallows,Chippa Utd,0,0
+2023-10-04,Stellenbosch FC,TS Galaxy,3,0
+2023-10-04,Ajax Cape Town,SuperSport,1,2
+2023-10-04,Richards Bay FC,Polokwane City,0,1
+2023-10-05,Sekhukhune United FC,Golden Arrows,0,1
+2023-10-08,Sekhukhune United FC,Polokwane City,0,0
+2023-10-24,AmaZulu,Orlando Pirates,0,0
+2023-10-26,SuperSport,Royal Eagles FC,3,1
+2023-10-27,Orlando Pirates,Polokwane City,1,1
+2023-10-28,Golden Arrows,Kaizer Chiefs,2,1
+2023-10-28,Chippa Utd,AmaZulu,1,1
+2023-10-29,Richards Bay FC,Cape Town City,1,3
+2023-10-29,TS Galaxy,Sekhukhune United FC,2,0
+2023-11-01,TS Galaxy,SuperSport,2,3
+2023-11-01,Ajax Cape Town,Orlando Pirates,2,1
+2023-11-07,Orlando Pirates,Sekhukhune United FC,1,0
+2023-11-07,Royal Eagles FC,Golden Arrows,1,0
+2023-11-07,Cape Town City,Chippa Utd,2,1
+2023-11-07,Stellenbosch FC,Richards Bay FC,2,1
+2023-11-08,Kaizer Chiefs,Ajax Cape Town,3,2
+2023-11-08,Moroka Swallows,TS Galaxy,1,0
+2023-11-08,Polokwane City,SuperSport,1,1
+2023-11-10,Cape Town City,Royal Eagles FC,2,0
+2023-11-11,Polokwane City,Moroka Swallows,0,0
+2023-11-11,Kaizer Chiefs,Orlando Pirates,0,1
+2023-11-11,Chippa Utd,Stellenbosch FC,0,0
+2023-11-12,Richards Bay FC,Ajax Cape Town,1,0
+2023-11-12,Golden Arrows,AmaZulu,1,3
+2023-11-12,Sekhukhune United FC,SuperSport,2,1
+2023-11-25,Richards Bay FC,Orlando Pirates,0,0
+2023-11-25,AmaZulu,Stellenbosch FC,0,1
+2023-11-25,Ajax Cape Town,Royal Eagles FC,1,2
+2023-11-26,TS Galaxy,Polokwane City,3,0
+2023-11-26,Moroka Swallows,Kaizer Chiefs,0,1
+2023-11-26,Golden Arrows,Cape Town City,0,1
+2023-11-28,Ajax Cape Town,Stellenbosch FC,0,3
+2023-11-29,SuperSport,Sundowns,0,2
+2023-12-05,Orlando Pirates,Moroka Swallows,2,0
+2023-12-06,AmaZulu,Sundowns,0,1
+2023-12-06,Sekhukhune United FC,Chippa Utd,2,0
+2023-12-08,Stellenbosch FC,Cape Town City,1,0
+2023-12-09,Polokwane City,Kaizer Chiefs,0,1
+2023-12-09,Chippa Utd,Golden Arrows,2,0
+2023-12-09,Orlando Pirates,TS Galaxy,1,0
+2023-12-10,Royal Eagles FC,Richards Bay FC,3,2
+2023-12-13,AmaZulu,Sekhukhune United FC,1,0
+2023-12-13,Sundowns,Ajax Cape Town,3,0
+2023-12-15,Moroka Swallows,SuperSport,1,2
+2023-12-17,Golden Arrows,Orlando Pirates,1,2
+2023-12-22,AmaZulu,Ajax Cape Town,1,1
+2023-12-23,Chippa Utd,Polokwane City,1,2
+2023-12-23,Golden Arrows,TS Galaxy,0,2
+2023-12-23,Royal Eagles FC,Moroka Swallows,0,0
+2023-12-23,Kaizer Chiefs,Richards Bay FC,1,0
+2023-12-23,SuperSport,Orlando Pirates,3,1
+2023-12-24,Cape Town City,Sundowns,0,0
+2023-12-27,Sundowns,Moroka Swallows,3,0
+2023-12-29,AmaZulu,Royal Eagles FC,3,0
+2023-12-29,Orlando Pirates,Stellenbosch FC,2,3
+2023-12-30,TS Galaxy,Chippa Utd,2,0
+2023-12-30,Moroka Swallows,Golden Arrows,0,3
+2023-12-30,Richards Bay FC,SuperSport,3,1
+2023-12-30,Sundowns,Polokwane City,0,0
+2023-12-30,Sekhukhune United FC,Kaizer Chiefs,1,1
+2023-12-31,Ajax Cape Town,Cape Town City,0,2
+2024-02-16,SuperSport,Stellenbosch FC,1,1
+2024-02-17,Moroka Swallows,Polokwane City,0,1
+2024-02-17,Chippa Utd,Cape Town City,1,1
+2024-02-17,Sekhukhune United FC,Richards Bay FC,3,1
+2024-02-17,Ajax Cape Town,AmaZulu,3,1
+2024-02-17,Sundowns,Orlando Pirates,1,1
+2024-02-18,Royal Eagles FC,Kaizer Chiefs,0,0
+2024-02-18,TS Galaxy,Golden Arrows,3,1
+2024-02-27,Sundowns,AmaZulu,3,0
+2024-02-28,Cape Town City,SuperSport,1,1
+2024-02-28,Golden Arrows,Sekhukhune United FC,0,1
+2024-03-01,Stellenbosch FC,Chippa Utd,1,1
+2024-03-02,Polokwane City,Orlando Pirates,0,1
+2024-03-02,Kaizer Chiefs,Moroka Swallows,0,0
+2024-03-02,Richards Bay FC,Royal Eagles FC,1,2
+2024-03-03,Ajax Cape Town,TS Galaxy,2,0
+2024-03-05,Cape Town City,Stellenbosch FC,0,1
+2024-03-05,AmaZulu,Moroka Swallows,1,1
+2024-03-05,Kaizer Chiefs,Golden Arrows,1,0
+2024-03-06,Orlando Pirates,Ajax Cape Town,1,1
+2024-03-06,Sekhukhune United FC,Royal Eagles FC,1,0
+2024-03-06,Chippa Utd,Richards Bay FC,3,0
+2024-03-09,Orlando Pirates,Kaizer Chiefs,3,2
+2024-03-09,SuperSport,AmaZulu,1,1
+2024-03-09,Moroka Swallows,Sekhukhune United FC,1,4
+2024-03-09,Stellenbosch FC,Ajax Cape Town,1,1
+2024-03-09,Sundowns,Chippa Utd,2,0
+2024-03-09,Richards Bay FC,TS Galaxy,0,0
+2024-03-10,Polokwane City,Golden Arrows,0,1
+2024-03-10,Royal Eagles FC,Cape Town City,2,0
+2024-03-12,Sundowns,SuperSport,1,1
+2024-03-30,Cape Town City,Kaizer Chiefs,0,0
+2024-03-30,Polokwane City,Chippa Utd,1,0
+2024-03-30,Stellenbosch FC,Royal Eagles FC,3,0
+2024-03-30,Golden Arrows,Richards Bay FC,2,1
+2024-03-30,TS Galaxy,AmaZulu,2,0
+2024-03-30,Sekhukhune United FC,Orlando Pirates,2,1
+2024-03-31,Ajax Cape Town,Moroka Swallows,0,1
+2024-04-02,Sundowns,Richards Bay FC,1,0
+2024-04-02,AmaZulu,Polokwane City,0,0
+2024-04-02,Kaizer Chiefs,Stellenbosch FC,0,1
+2024-04-02,Sekhukhune United FC,Cape Town City,2,2
+2024-04-03,Chippa Utd,Ajax Cape Town,2,0
+2024-04-03,TS Galaxy,Royal Eagles FC,3,0
+2024-04-03,Golden Arrows,SuperSport,2,2
+2024-04-03,Moroka Swallows,Orlando Pirates,1,1
+2024-04-06,Richards Bay FC,Moroka Swallows,1,0
+2024-04-06,Chippa Utd,Kaizer Chiefs,2,0
+2024-04-06,Stellenbosch FC,Sekhukhune United FC,0,0
+2024-04-06,Orlando Pirates,Golden Arrows,7,1
+2024-04-06,SuperSport,TS Galaxy,0,1
+2024-04-07,Cape Town City,AmaZulu,0,1
+2024-04-07,Royal Eagles FC,Polokwane City,3,2
+2024-04-09,Ajax Cape Town,Sundowns,0,1
+2024-04-15,Moroka Swallows,Sundowns,2,2
+2024-04-17,Sekhukhune United FC,Stellenbosch FC,1,1
+2024-04-17,SuperSport,Polokwane City,1,1
+2024-04-20,Golden Arrows,Royal Eagles FC,1,1
+2024-04-20,Sekhukhune United FC,Ajax Cape Town,1,0
+2024-04-20,Orlando Pirates,AmaZulu,1,0
+2024-04-20,SuperSport,Chippa Utd,0,2
+2024-04-21,Polokwane City,Cape Town City,2,2
+2024-04-21,Richards Bay FC,Kaizer Chiefs,1,0
+2024-04-21,TS Galaxy,Stellenbosch FC,1,2
+2024-04-23,Sundowns,Sekhukhune United FC,2,1
+2024-04-26,TS Galaxy,Moroka Swallows,2,1
+2024-04-26,Ajax Cape Town,Richards Bay FC,1,0
+2024-04-27,AmaZulu,Chippa Utd,2,1
+2024-04-27,Kaizer Chiefs,SuperSport,2,1
+2024-04-27,Stellenbosch FC,Polokwane City,5,0
+2024-04-28,Royal Eagles FC,Orlando Pirates,0,4
+2024-04-28,Cape Town City,Golden Arrows,1,1
+2024-04-29,Sundowns,TS Galaxy,3,0
+2024-04-30,Ajax Cape Town,Polokwane City,0,1
+2024-04-30,Richards Bay FC,AmaZulu,2,1
+2024-05-01,Chippa Utd,Moroka Swallows,1,2
+2024-05-01,Cape Town City,Orlando Pirates,0,2
+2024-05-01,Stellenbosch FC,Golden Arrows,3,0
+2024-05-01,Royal Eagles FC,SuperSport,0,1
+2024-05-02,Kaizer Chiefs,Sundowns,1,5
+2024-05-03,Sekhukhune United FC,TS Galaxy,0,0
+2024-05-07,Royal Eagles FC,Ajax Cape Town,0,1
+2024-05-07,Kaizer Chiefs,TS Galaxy,2,2
+2024-05-07,SuperSport,Sekhukhune United FC,1,1
+2024-05-07,Cape Town City,Moroka Swallows,2,0
+2024-05-08,Orlando Pirates,Chippa Utd,2,0
+2024-05-08,Stellenbosch FC,AmaZulu,0,0
+2024-05-08,Polokwane City,Richards Bay FC,0,0
+2024-05-08,Golden Arrows,Sundowns,0,0
+2024-05-10,SuperSport,Ajax Cape Town,0,0
+2024-05-11,Moroka Swallows,Stellenbosch FC,2,0
+2024-05-11,Polokwane City,Sekhukhune United FC,0,0
+2024-05-11,Sundowns,Royal Eagles FC,1,0
+2024-05-11,Orlando Pirates,Richards Bay FC,0,1
+2024-05-12,Cape Town City,TS Galaxy,1,1
+2024-05-12,Golden Arrows,Chippa Utd,1,1
+2024-05-12,AmaZulu,Kaizer Chiefs,1,1
+2024-05-14,Royal Eagles FC,Sundowns,0,2
+2024-05-18,Royal Eagles FC,Chippa Utd,0,0
+2024-05-18,Sekhukhune United FC,AmaZulu,0,1
+2024-05-18,Golden Arrows,Ajax Cape Town,1,1
+2024-05-18,Kaizer Chiefs,Polokwane City,0,0
+2024-05-18,TS Galaxy,Orlando Pirates,1,0
+2024-05-18,Cape Town City,Richards Bay FC,3,1
+2024-05-18,Stellenbosch FC,Sundowns,0,1
+2024-05-18,SuperSport,Moroka Swallows,2,0
+2024-05-21,TS Galaxy,Sundowns,1,1
+2024-05-25,Orlando Pirates,SuperSport,1,1
+2024-05-25,Moroka Swallows,Royal Eagles FC,1,2
+2024-05-25,Sundowns,Cape Town City,0,1
+2024-05-25,Richards Bay FC,Stellenbosch FC,2,1
+2024-05-25,Chippa Utd,Sekhukhune United FC,0,1
+2024-05-25,Polokwane City,TS Galaxy,1,0
+2024-05-25,AmaZulu,Golden Arrows,1,3
+2024-05-25,Ajax Cape Town,Kaizer Chiefs,2,0
