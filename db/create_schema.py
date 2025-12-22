@@ -196,6 +196,50 @@ def create_predictions_table() -> None:
         raise
 
 
+def create_user_feedback_table() -> None:
+    """
+    Create the user_feedback table for storing user predictions/feedback.
+
+    Columns:
+    - id: Primary key
+    - fixture_id: Reference to fixture (optional, can be 0 if not available)
+    - home_team: Home team name
+    - away_team: Away team name
+    - user_prediction: User's prediction (home_win, draw, away_win)
+    - user_email: User email (optional)
+    - created_at: Feedback creation timestamp
+    """
+    engine = get_db_engine()
+
+    create_table_sql = text(
+        """
+        CREATE TABLE IF NOT EXISTS user_feedback (
+            id SERIAL PRIMARY KEY,
+            fixture_id INTEGER DEFAULT 0,
+            home_team TEXT NOT NULL,
+            away_team TEXT NOT NULL,
+            user_prediction TEXT NOT NULL 
+                CHECK (user_prediction IN ('home_win', 'draw', 'away_win')),
+            user_email TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        
+        -- Create indexes for performance
+        CREATE INDEX IF NOT EXISTS idx_user_feedback_fixture ON user_feedback(fixture_id);
+        CREATE INDEX IF NOT EXISTS idx_user_feedback_teams ON user_feedback(home_team, away_team);
+        CREATE INDEX IF NOT EXISTS idx_user_feedback_created ON user_feedback(created_at);
+        """
+    )
+
+    try:
+        with engine.begin() as conn:
+            conn.execute(create_table_sql)
+        logger.info("[db] user_feedback table created/verified")
+    except Exception as e:
+        logger.error(f"[db] Failed to create user_feedback table: {e}", exc_info=True)
+        raise
+
+
 def create_all_tables() -> None:
     """
     Create all database tables in the correct order.
@@ -209,6 +253,7 @@ def create_all_tables() -> None:
         create_matches_table()
         create_fixtures_table()
         create_predictions_table()
+        create_user_feedback_table()
         
         logger.info("[db] All tables created successfully")
         print("[db] Database schema ready!")

@@ -1,0 +1,24 @@
+ABOUT THE SOCCER PREDICTOR
+==========================
+
+The Soccer Predictor is a smart football analytics platform that uses data
+science and machine learning to explore match outcomes in an engaging and
+accessible way.
+
+By analysing historical results, upcoming fixtures, and statistical patterns,
+the platform generates easy-to-understand predictions that help users explore
+how data can be applied to the beautiful game. Whether you are a football
+enthusiast, a data science learner, or simply curious about match trends, the
+Soccer Predictor offers a fresh perspective on match analysis.
+
+Designed as an educational and research-driven project, the Soccer Predictor
+demonstrates how modern analytics and machine learning techniques can uncover
+insights from football data. The platform emphasises transparency, responsible
+use, and continuous improvement through data.
+
+The Soccer Predictor is not a betting or gambling service. It does not provide
+odds, accept wagers, or guarantee results. All predictions are informational
+and experimental, created to support learning and exploration rather than
+betting decisions.
+
+Football meets data, insight, and innovation — all in one place.
