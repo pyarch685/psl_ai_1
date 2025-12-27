@@ -1,0 +1,297 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Oswald:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* South African PSL Soccer Predictor Design System
+   Stadium Atmosphere Theme with Township Vibes */
+
+@layer base {
+  :root {
+    /* Stadium Atmosphere Colors */
+    --background: 145 60% 8%;
+    --foreground: 45 100% 96%;
+
+    --card: 145 50% 12%;
+    --card-foreground: 45 100% 96%;
+
+    --popover: 145 50% 10%;
+    --popover-foreground: 45 100% 96%;
+
+    /* Grass Green Primary */
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Stadium Gold Secondary */
+    --secondary: 45 93% 47%;
+    --secondary-foreground: 0 0% 10%;
+
+    /* Sunset Orange Accent */
+    --accent: 25 95% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 145 30% 20%;
+    --muted-foreground: 45 30% 70%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 145 40% 25%;
+    --input: 145 40% 20%;
+    --ring: 45 93% 47%;
+
+    --radius: 0.75rem;
+
+    /* SA Team Colors */
+    --chiefs-gold: 45 100% 50%;
+    --chiefs-black: 0 0% 10%;
+    --pirates-white: 0 0% 95%;
+    --pirates-black: 0 0% 8%;
+    --sundowns-yellow: 52 100% 50%;
+    --sundowns-blue: 210 100% 40%;
+
+    /* SA Flag Colors */
+    --sa-green: 150 100% 27%;
+    --sa-gold: 45 100% 50%;
+    --sa-red: 0 85% 47%;
+    --sa-blue: 210 100% 35%;
+    --sa-black: 0 0% 10%;
+    --sa-white: 0 0% 100%;
+
+    /* Stadium Effects */
+    --stadium-glow: 45 100% 60%;
+    --pitch-green: 120 60% 30%;
+    --floodlight: 45 90% 80%;
+
+    --sidebar-background: 145 50% 10%;
+    --sidebar-foreground: 45 100% 96%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 145 40% 18%;
+    --sidebar-accent-foreground: 45 100% 96%;
+    --sidebar-border: 145 40% 25%;
+    --sidebar-ring: 45 93% 47%;
+  }
+
+  .dark {
+    --background: 145 60% 6%;
+    --foreground: 45 100% 96%;
+
+    --card: 145 50% 10%;
+    --card-foreground: 45 100% 96%;
+
+    --popover: 145 50% 8%;
+    --popover-foreground: 45 100% 96%;
+
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 45 93% 47%;
+    --secondary-foreground: 0 0% 10%;
+
+    --accent: 25 95% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 145 30% 15%;
+    --muted-foreground: 45 30% 60%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 145 40% 20%;
+    --input: 145 40% 15%;
+    --ring: 45 93% 47%;
+
+    --sidebar-background: 145 50% 8%;
+    --sidebar-foreground: 45 100% 96%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 145 40% 15%;
+    --sidebar-accent-foreground: 45 100% 96%;
+    --sidebar-border: 145 40% 20%;
+    --sidebar-ring: 45 93% 47%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Ubuntu', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+/* Stadium Animations */
+@layer utilities {
+  /* Floating Animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+  }
+
+  /* Vuvuzela Blast */
+  @keyframes vuvuzela-blast {
+    0% { transform: scale(1) rotate(-10deg); }
+    25% { transform: scale(1.1) rotate(5deg); }
+    50% { transform: scale(1) rotate(-5deg); }
+    75% { transform: scale(1.05) rotate(3deg); }
+    100% { transform: scale(1) rotate(-10deg); }
+  }
+
+  /* Confetti Fall */
+  @keyframes confetti-fall {
+    0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Flag Wave */
+  @keyframes flag-wave {
+    0%, 100% { transform: skewX(-2deg) scaleX(1); }
+    50% { transform: skewX(2deg) scaleX(0.95); }
+  }
+
+  /* Bounce Celebration */
+  @keyframes bounce-celebrate {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-30px) scale(1.1); }
+  }
+
+  /* Pulse Glow */
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px hsl(var(--stadium-glow) / 0.3); }
+    50% { box-shadow: 0 0 40px hsl(var(--stadium-glow) / 0.6), 0 0 60px hsl(var(--secondary) / 0.3); }
+  }
+
+  /* Stadium Lights */
+  @keyframes stadium-lights {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+  }
+
+  /* Crowd Wave */
+  @keyframes crowd-wave {
+    0% { transform: translateY(0); }
+    25% { transform: translateY(-10px); }
+    50% { transform: translateY(0); }
+    75% { transform: translateY(-5px); }
+    100% { transform: translateY(0); }
+  }
+
+  /* Shake Animation */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+  }
+
+  /* Gradient Shift */
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-vuvuzela {
+    animation: vuvuzela-blast 0.5s ease-in-out;
+  }
+
+  .animate-confetti {
+    animation: confetti-fall 5s linear infinite;
+  }
+
+  .animate-flag-wave {
+    animation: flag-wave 2s ease-in-out infinite;
+  }
+
+  .animate-bounce-celebrate {
+    animation: bounce-celebrate 1s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-stadium-lights {
+    animation: stadium-lights 3s ease-in-out infinite;
+  }
+
+  .animate-crowd-wave {
+    animation: crowd-wave 2s ease-in-out infinite;
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+
+  /* Stadium Gradient Background */
+  .stadium-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--pitch-green)) 0%,
+      hsl(var(--background)) 30%,
+      hsl(var(--background)) 70%,
+      hsl(var(--pitch-green)) 100%
+    );
+  }
+
+  /* Golden Glow Effect */
+  .golden-glow {
+    box-shadow: 
+      0 0 20px hsl(var(--secondary) / 0.3),
+      0 0 40px hsl(var(--secondary) / 0.2),
+      inset 0 1px 0 hsl(var(--secondary) / 0.5);
+  }
+
+  /* Team Color Stripes */
+  .team-stripe-chiefs {
+    background: linear-gradient(90deg, hsl(var(--chiefs-gold)) 0%, hsl(var(--chiefs-black)) 100%);
+  }
+
+  .team-stripe-pirates {
+    background: linear-gradient(90deg, hsl(var(--pirates-black)) 0%, hsl(var(--pirates-white)) 50%, hsl(var(--pirates-black)) 100%);
+  }
+
+  .team-stripe-sundowns {
+    background: linear-gradient(90deg, hsl(var(--sundowns-yellow)) 0%, hsl(var(--sundowns-blue)) 100%);
+  }
+
+  /* SA Flag Gradient */
+  .sa-flag-gradient {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--sa-green)) 0%,
+      hsl(var(--sa-gold)) 25%,
+      hsl(var(--sa-red)) 50%,
+      hsl(var(--sa-blue)) 75%,
+      hsl(var(--sa-black)) 100%
+    );
+  }
+
+  /* Floodlight Overlay */
+  .floodlight-overlay {
+    background: radial-gradient(
+      ellipse at top,
+      hsl(var(--floodlight) / 0.15) 0%,
+      transparent 50%
+    );
+  }
+}

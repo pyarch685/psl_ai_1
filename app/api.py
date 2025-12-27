@@ -7,14 +7,19 @@ from __future__ import annotations
 
 import os
 import random
+import re
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
+import bcrypt
+from jose import JWTError, jwt
 from sqlalchemy import text
 
 # Load environment variables from .env file if it exists
@@ -36,6 +41,14 @@ from core.prediction import (
 )
 from core.model_store import save_model, load_model
 from db.engine import get_db_engine
+
+# JWT Configuration
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+
+# Security
+security = HTTPBearer()
 
 app = FastAPI(
     title="PSL Soccer Predictor API",
@@ -141,6 +154,34 @@ class FeedbackResponse(BaseModel):
     """Response model for user feedback."""
     success: bool
     message: str
+
+
+class RegisterRequest(BaseModel):
+    """Request model for user registration."""
+    email: str
+    password: str
+
+
+class RegisterResponse(BaseModel):
+    """Response model for user registration."""
+    success: bool
+    message: str
+    user_id: Optional[int] = None
+
+
+class LoginRequest(BaseModel):
+    """Request model for user login."""
+    email: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    """Response model for user login."""
+    success: bool
+    message: str
+    user_id: Optional[int] = None
+    access_token: Optional[str] = None
+    token_type: str = "bearer"
 
 
 @app.get("/")
@@ -254,17 +295,108 @@ async def predict_match(request: PredictionRequest) -> PredictionResponse:
         )
 
 
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Create a JWT access token.
+
+    Args:
+        data: Data to encode in the token (typically user_id and email).
+        expires_delta: Optional expiration time delta.
+
+    Returns:
+        Encoded JWT token string.
+    """
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
+    """
+    Verify JWT token and return current user information.
+
+    Args:
+        credentials: HTTPBearer credentials containing the JWT token.
+
+    Returns:
+        Dictionary with user information (user_id, email).
+
+    Raises:
+        HTTPException: If token is invalid or user not found.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
+            raise credentials_exception
+        # Convert string back to int
+        user_id = int(user_id_str)
+    except (JWTError, ValueError, TypeError) as e:
+        # Log the actual error for debugging
+        print(f"[auth] JWT decode error: {e}")
+        raise credentials_exception
+    except Exception as e:
+        # Catch any other errors
+        print(f"[auth] Unexpected error decoding token: {e}")
+        raise credentials_exception
+    
+    # Verify user exists and is active
+    try:
+        engine = get_db_engine()
+        with engine.connect() as conn:
+            get_user = text("""
+                SELECT id, email, is_active
+                FROM users
+                WHERE id = :user_id
+            """)
+            result = conn.execute(get_user, {"user_id": user_id})
+            user = result.fetchone()
+            
+            if not user:
+                raise credentials_exception
+            
+            user_id, email, is_active = user
+            
+            if not is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Account is inactive"
+                )
+            
+            return {"user_id": user_id, "email": email}
+    except HTTPException:
+        raise
+    except Exception:
+        raise credentials_exception
+
+
 @app.get("/fixtures")
 async def get_fixtures_with_predictions(
     days: int = 14,
-    limit: int = 5
+    limit: int = 5,
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
     Get upcoming fixtures with predictions.
+    
+    Requires authentication (registered users only).
 
     Args:
         days: Number of days ahead to fetch fixtures (default: 14).
         limit: Maximum number of fixtures to return (default: 5).
+        current_user: Current authenticated user (from JWT token).
 
     Returns:
         Dict containing list of fixtures with predictions and count.
@@ -272,7 +404,7 @@ async def get_fixtures_with_predictions(
         probabilities, predicted_outcome, confidence.
 
     Raises:
-        HTTPException: If model not trained or fixtures cannot be loaded.
+        HTTPException: If not authenticated, model not trained, or fixtures cannot be loaded.
     """
     global _model_cache
 
@@ -561,6 +693,253 @@ async def get_contact_content() -> Dict[str, str]:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to load contact content: {str(e)}"
+        )
+
+
+def validate_email(email: str) -> bool:
+    """
+    Validate email format using regex.
+
+    Args:
+        email: Email address to validate.
+
+    Returns:
+        True if email is valid, False otherwise.
+    """
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """
+    Validate password meets professional security requirements.
+
+    Requirements:
+    - Minimum 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    - At least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)
+
+    Args:
+        password: Password to validate.
+
+    Returns:
+        Tuple of (is_valid, error_message).
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one digit"
+    
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]', password):
+        return False, "Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)"
+    
+    return True, ""
+
+
+def hash_password(password: str) -> str:
+    """
+    Hash a password using bcrypt.
+
+    Args:
+        password: Plain text password.
+
+    Returns:
+        Hashed password string.
+    """
+    # Bcrypt has a 72-byte limit, encode to bytes first
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode('utf-8')
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Verify a plain password against a hash.
+
+    Args:
+        plain_password: Plain text password to verify.
+        hashed_password: Hashed password to compare against.
+
+    Returns:
+        True if password matches, False otherwise.
+    """
+    try:
+        password_bytes = plain_password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        hashed_bytes = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
+    except Exception:
+        return False
+
+
+@app.post("/auth/register", response_model=RegisterResponse)
+async def register_user(request: RegisterRequest) -> RegisterResponse:
+    """
+    Register a new user account.
+
+    Args:
+        request: RegisterRequest containing email and password.
+
+    Returns:
+        RegisterResponse with success status and message.
+
+    Raises:
+        HTTPException: If registration fails or email already exists.
+    """
+    # Validate email format
+    if not validate_email(request.email):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid email format"
+        )
+    
+    # Normalize email (lowercase)
+    email = request.email.lower().strip()
+    
+    # Validate password strength
+    is_valid, error_msg = validate_password_strength(request.password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Password does not meet security requirements: {error_msg}"
+        )
+    
+    try:
+        engine = get_db_engine()
+        
+        # Check if email already exists
+        with engine.connect() as conn:
+            check_email = text("SELECT id FROM users WHERE email = :email")
+            result = conn.execute(check_email, {"email": email})
+            if result.fetchone():
+                raise HTTPException(
+                    status_code=409,
+                    detail="Email address already registered"
+                )
+        
+        # Hash password and insert user
+        password_hash = hash_password(request.password)
+        
+        with engine.begin() as conn:
+            insert_user = text("""
+                INSERT INTO users (email, password_hash)
+                VALUES (:email, :password_hash)
+                RETURNING id
+            """)
+            result = conn.execute(insert_user, {
+                "email": email,
+                "password_hash": password_hash
+            })
+            user_id = result.scalar()
+        
+        return RegisterResponse(
+            success=True,
+            message="User registered successfully",
+            user_id=user_id
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Registration failed: {str(e)}"
+        )
+
+
+@app.post("/auth/login", response_model=LoginResponse)
+async def login_user(request: LoginRequest) -> LoginResponse:
+    """
+    Authenticate a user and log them in.
+
+    Args:
+        request: LoginRequest containing email and password.
+
+    Returns:
+        LoginResponse with success status and message.
+
+    Raises:
+        HTTPException: If login fails (invalid credentials or account inactive).
+    """
+    # Normalize email (lowercase)
+    email = request.email.lower().strip()
+    
+    try:
+        engine = get_db_engine()
+        
+        # Get user from database
+        with engine.connect() as conn:
+            get_user = text("""
+                SELECT id, password_hash, is_active
+                FROM users
+                WHERE email = :email
+            """)
+            result = conn.execute(get_user, {"email": email})
+            user = result.fetchone()
+            
+            if not user:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid email or password"
+                )
+            
+            user_id, password_hash, is_active = user
+            
+            # Check if account is active
+            if not is_active:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Account is inactive. Please contact support."
+                )
+            
+            # Verify password
+            if not verify_password(request.password, password_hash):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid email or password"
+                )
+            
+            # Update last login timestamp
+            with engine.begin() as conn:
+                update_login = text("""
+                    UPDATE users
+                    SET last_login = NOW()
+                    WHERE id = :user_id
+                """)
+                conn.execute(update_login, {"user_id": user_id})
+        
+        # Create access token (sub must be a string for python-jose)
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user_id), "email": email},
+            expires_delta=access_token_expires
+        )
+        
+        return LoginResponse(
+            success=True,
+            message="Login successful",
+            user_id=user_id,
+            access_token=access_token,
+            token_type="bearer"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Login failed: {str(e)}"
         )
 
 

@@ -25,3 +25,8 @@ apscheduler>=3.10.0
 
 # Environment Variables
 python-dotenv>=1.0.0
+
+# Authentication & Security
+bcrypt>=4.0.0
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.6
