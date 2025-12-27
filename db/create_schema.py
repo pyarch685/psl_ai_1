@@ -291,6 +291,52 @@ def create_users_table() -> None:
         raise
 
 
+def create_password_reset_tokens_table() -> None:
+    """
+    Create the password_reset_tokens table for password recovery.
+
+    Columns:
+    - id: Primary key
+    - user_id: Foreign key to users table
+    - token: Secure random token (hashed)
+    - created_at: Token creation timestamp
+    - expires_at: Token expiration timestamp
+    - used_at: Token usage timestamp (nullable, null means not used yet)
+    
+    Tokens expire after 1 hour by default and can only be used once.
+    """
+    engine = get_db_engine()
+
+    create_table_sql = text(
+        """
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT NOW(),
+            expires_at TIMESTAMP NOT NULL,
+            used_at TIMESTAMP,
+            
+            -- Ensure token is not empty
+            CHECK (LENGTH(token) > 0)
+        );
+        
+        -- Create indexes for performance
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires ON password_reset_tokens(expires_at);
+        """
+    )
+
+    try:
+        with engine.begin() as conn:
+            conn.execute(create_table_sql)
+        logger.info("[db] password_reset_tokens table created/verified")
+    except Exception as e:
+        logger.error(f"[db] Failed to create password_reset_tokens table: {e}", exc_info=True)
+        raise
+
+
 def create_all_tables() -> None:
     """
     Create all database tables in the correct order.
@@ -306,6 +352,7 @@ def create_all_tables() -> None:
         create_predictions_table()
         create_user_feedback_table()
         create_users_table()
+        create_password_reset_tokens_table()
         
         logger.info("[db] All tables created successfully")
         print("[db] Database schema ready!")

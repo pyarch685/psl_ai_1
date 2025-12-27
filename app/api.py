@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import random
 import re
+import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -40,6 +41,7 @@ from core.prediction import (
     load_all_match_data,
 )
 from core.model_store import save_model, load_model
+from core.email_utils import send_password_reset_email, send_password_reset_confirmation_email
 from db.engine import get_db_engine
 
 # JWT Configuration
@@ -184,6 +186,29 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class ForgotPasswordRequest(BaseModel):
+    """Request model for forgot password."""
+    email: str
+
+
+class ForgotPasswordResponse(BaseModel):
+    """Response model for forgot password."""
+    success: bool
+    message: str
+
+
+class ResetPasswordRequest(BaseModel):
+    """Request model for reset password."""
+    token: str
+    new_password: str
+
+
+class ResetPasswordResponse(BaseModel):
+    """Response model for reset password."""
+    success: bool
+    message: str
+
+
 @app.get("/")
 async def root() -> Dict[str, Any]:
     """
@@ -200,7 +225,11 @@ async def root() -> Dict[str, Any]:
             "/predict": "Make a prediction for a match",
             "/fixtures": "Get upcoming fixtures with predictions",
             "/train": "Train/retrain the model",
-            "/model/status": "Get current model status"
+            "/model/status": "Get current model status",
+            "/auth/register": "Register a new user account",
+            "/auth/login": "Login to user account",
+            "/auth/forgot-password": "Request password reset email",
+            "/auth/reset-password": "Reset password with token"
         }
     }
 
@@ -785,6 +814,29 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
+def generate_secure_token() -> str:
+    """
+    Generate a secure random token for password reset.
+
+    Returns:
+        URL-safe random token string (32 bytes = 43 characters).
+    """
+    return secrets.token_urlsafe(32)
+
+
+def hash_token(token: str) -> str:
+    """
+    Hash a token using bcrypt for secure storage.
+
+    Args:
+        token: Plain token string.
+
+    Returns:
+        Hashed token string.
+    """
+    return hash_password(token)
+
+
 @app.post("/auth/register", response_model=RegisterResponse)
 async def register_user(request: RegisterRequest) -> RegisterResponse:
     """
@@ -992,6 +1044,215 @@ async def submit_feedback(request: UserFeedbackRequest) -> FeedbackResponse:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to submit feedback: {str(e)}"
+        )
+
+
+@app.post("/auth/forgot-password", response_model=ForgotPasswordResponse)
+async def forgot_password(request: ForgotPasswordRequest) -> ForgotPasswordResponse:
+    """
+    Request a password reset token.
+
+    Sends a password reset email to the user if the email exists in the system.
+    For security, always returns success even if email doesn't exist.
+
+    Args:
+        request: ForgotPasswordRequest containing email address.
+
+    Returns:
+        ForgotPasswordResponse with success status.
+
+    Raises:
+        HTTPException: If email format is invalid or server error occurs.
+    """
+    # Validate email format
+    if not validate_email(request.email):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid email format"
+        )
+    
+    # Normalize email (lowercase)
+    email = request.email.lower().strip()
+    
+    try:
+        engine = get_db_engine()
+        
+        # Check if user exists
+        with engine.connect() as conn:
+            get_user = text("SELECT id, is_active FROM users WHERE email = :email")
+            result = conn.execute(get_user, {"email": email})
+            user = result.fetchone()
+            
+            # For security, always return success message
+            # Don't reveal whether the email exists or not
+            if not user:
+                print(f"[auth] Password reset requested for non-existent email: {email}")
+                return ForgotPasswordResponse(
+                    success=True,
+                    message="If the email exists in our system, a password reset link has been sent."
+                )
+            
+            user_id, is_active = user
+            
+            # Check if account is active
+            if not is_active:
+                print(f"[auth] Password reset requested for inactive account: {email}")
+                return ForgotPasswordResponse(
+                    success=True,
+                    message="If the email exists in our system, a password reset link has been sent."
+                )
+        
+        # Generate secure token
+        reset_token = generate_secure_token()
+        token_hash = hash_token(reset_token)
+        
+        # Set expiration (1 hour from now)
+        expires_at = datetime.utcnow() + timedelta(hours=1)
+        
+        # Store token in database
+        with engine.begin() as conn:
+            # Invalidate any existing unused tokens for this user
+            invalidate_tokens = text("""
+                UPDATE password_reset_tokens
+                SET used_at = NOW()
+                WHERE user_id = :user_id AND used_at IS NULL
+            """)
+            conn.execute(invalidate_tokens, {"user_id": user_id})
+            
+            # Insert new token
+            insert_token = text("""
+                INSERT INTO password_reset_tokens (user_id, token, expires_at)
+                VALUES (:user_id, :token, :expires_at)
+            """)
+            conn.execute(insert_token, {
+                "user_id": user_id,
+                "token": token_hash,
+                "expires_at": expires_at
+            })
+        
+        # Get reset URL from environment or use default
+        reset_url_base = os.getenv("PASSWORD_RESET_URL", "http://localhost:8080/reset-password")
+        
+        # Send password reset email
+        email_sent = send_password_reset_email(email, reset_token, reset_url_base)
+        
+        if not email_sent:
+            print(f"[auth] Failed to send password reset email to {email}")
+            # Still return success for security reasons
+        
+        return ForgotPasswordResponse(
+            success=True,
+            message="If the email exists in our system, a password reset link has been sent."
+        )
+        
+    except Exception as e:
+        print(f"[auth] Error in forgot_password: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while processing your request. Please try again later."
+        )
+
+
+@app.post("/auth/reset-password", response_model=ResetPasswordResponse)
+async def reset_password(request: ResetPasswordRequest) -> ResetPasswordResponse:
+    """
+    Reset password using a valid token.
+
+    Args:
+        request: ResetPasswordRequest containing token and new password.
+
+    Returns:
+        ResetPasswordResponse with success status.
+
+    Raises:
+        HTTPException: If token is invalid, expired, or password is weak.
+    """
+    # Validate new password strength
+    is_valid, error_msg = validate_password_strength(request.new_password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Password does not meet security requirements: {error_msg}"
+        )
+    
+    try:
+        engine = get_db_engine()
+        
+        # Find valid token
+        with engine.connect() as conn:
+            get_token = text("""
+                SELECT prt.id, prt.user_id, prt.token, prt.expires_at, prt.used_at, u.email, u.is_active
+                FROM password_reset_tokens prt
+                JOIN users u ON prt.user_id = u.id
+                WHERE prt.used_at IS NULL
+                AND prt.expires_at > NOW()
+                ORDER BY prt.created_at DESC
+            """)
+            result = conn.execute(get_token)
+            tokens = result.fetchall()
+            
+            # Find matching token by verifying hash
+            matching_token = None
+            for token_row in tokens:
+                token_id, user_id, token_hash, expires_at, used_at, email, is_active = token_row
+                if verify_password(request.token, token_hash):
+                    matching_token = token_row
+                    break
+            
+            if not matching_token:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid or expired reset token"
+                )
+            
+            token_id, user_id, token_hash, expires_at, used_at, email, is_active = matching_token
+            
+            # Check if account is active
+            if not is_active:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Account is inactive. Please contact support."
+                )
+        
+        # Hash new password
+        new_password_hash = hash_password(request.new_password)
+        
+        # Update password and mark token as used
+        with engine.begin() as conn:
+            # Update password
+            update_password = text("""
+                UPDATE users
+                SET password_hash = :password_hash
+                WHERE id = :user_id
+            """)
+            conn.execute(update_password, {
+                "password_hash": new_password_hash,
+                "user_id": user_id
+            })
+            
+            # Mark token as used
+            mark_token_used = text("""
+                UPDATE password_reset_tokens
+                SET used_at = NOW()
+                WHERE id = :token_id
+            """)
+            conn.execute(mark_token_used, {"token_id": token_id})
+        
+        # Send confirmation email
+        send_password_reset_confirmation_email(email)
+        
+        return ResetPasswordResponse(
+            success=True,
+            message="Password has been reset successfully"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[auth] Error in reset_password: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while resetting your password. Please try again later."
         )
 
 
