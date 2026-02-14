@@ -5,8 +5,10 @@ Provides REST API endpoints for predictions and model management.
 """
 from __future__ import annotations
 
+import logging
 import os
 import random
+import threading
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -41,6 +43,9 @@ from core.prediction import (
 )
 from core.model_store import save_model, load_model
 from db.engine import get_db_engine
+from app.twitter_client import fetch_user_tweets
+
+logger = logging.getLogger(__name__)
 
 # Import production configuration
 try:
@@ -264,7 +269,10 @@ async def root() -> Dict[str, Any]:
             "/predict": "Make a prediction for a match",
             "/fixtures": "Get upcoming fixtures with predictions",
             "/train": "Train/retrain the model",
-            "/model/status": "Get current model status"
+            "/model/status": "Get current model status",
+            "/benchmark": "Get predictions vs actual results (performance over time)",
+            "/twitter/feed": "Get tweets from @OfficialPSL (Fan Zone)",
+            "/scrape/refresh": "Trigger manual scrape to refresh benchmark data"
         }
     }
 
@@ -683,6 +691,254 @@ async def get_model_status() -> Dict[str, Any]:
         "training_params": _model_params,
         "teams_count": len(_model_cache.team_elo)
     }
+
+
+def _confidence_to_str(conf: float) -> str:
+    """Convert confidence float to High/Medium/Low string."""
+    if conf >= 0.6:
+        return "High"
+    if conf >= 0.4:
+        return "Medium"
+    return "Low"
+
+
+def _outcome_to_display(outcome: str) -> str:
+    """Map API outcome (Home/Draw/Away) to display (Home Win/Draw/Away Win)."""
+    mapping = {"Home": "Home Win", "Draw": "Draw", "Away": "Away Win"}
+    return mapping.get(outcome, outcome)
+
+
+@app.get("/benchmark")
+async def get_benchmark_results() -> Dict[str, Any]:
+    """
+    Get benchmark results: predictions vs actual match results.
+
+    Uses only completed fixtures from the database (scraped from psl.co.za
+    Match Centre). Returns summary, matches, and accuracy_by_period for
+    performance-over-time trend.
+    """
+    global _model_cache
+
+    if _model_cache is None:
+        return {
+            "summary": {
+                "total_matches": 0,
+                "correct": 0,
+                "incorrect": 0,
+                "pending": 0,
+                "accuracy": 0.0,
+                "accuracy_by_confidence": [],
+                "accuracy_by_period": [],
+            },
+            "matches": [],
+            "message": "Model not trained. Train the model first to see benchmark results.",
+        }
+
+    try:
+        engine = get_db_engine()
+        q = text("""
+            SELECT date, home_team, away_team, home_goals, away_goals
+            FROM fixtures
+            WHERE home_goals IS NOT NULL AND away_goals IS NOT NULL
+            ORDER BY date DESC
+            LIMIT 200
+        """)
+        with engine.connect() as conn:
+            rows = conn.execute(q).fetchall()
+        combined = pd.DataFrame(
+            rows,
+            columns=["date", "home_team", "away_team", "home_goals", "away_goals"],
+        )
+        if combined.empty:
+            return {
+                "summary": {
+                    "total_matches": 0,
+                    "correct": 0,
+                    "incorrect": 0,
+                    "pending": 0,
+                    "accuracy": 0.0,
+                    "accuracy_by_confidence": [],
+                    "accuracy_by_period": [],
+                },
+                "matches": [],
+                "message": "No completed match results in database. The scheduler scrapes fixtures from psl.co.za; ensure the app has been running and matches have been played.",
+            }
+
+        matches_list: List[Dict[str, Any]] = []
+        correct = 0
+        incorrect = 0
+
+        for idx, row in combined.iterrows():
+            match_date = row["date"]
+            home_team = str(row["home_team"]).strip()
+            away_team = str(row["away_team"]).strip()
+            hg = row["home_goals"]
+            ag = row["away_goals"]
+
+            if pd.isna(hg) or pd.isna(ag):
+                continue
+
+            hg, ag = int(hg), int(ag)
+            actual_score = f"{hg}-{ag}"
+            if hg > ag:
+                actual_outcome = "Home Win"
+            elif hg == ag:
+                actual_outcome = "Draw"
+            else:
+                actual_outcome = "Away Win"
+
+            pred_display = "N/A"
+            is_correct: Optional[bool] = None
+            conf = 0.0
+            try:
+                probs = predict_softmax(_model_cache, home_team, away_team)
+                pred_outcome = max(probs.items(), key=lambda x: x[1])[0]
+                conf = probs[pred_outcome]
+                pred_display = _outcome_to_display(pred_outcome)
+                is_correct = pred_display == actual_outcome
+                if is_correct:
+                    correct += 1
+                else:
+                    incorrect += 1
+            except Exception:
+                # Include match anyway so user sees actual results; prediction N/A
+                pass
+
+            date_str = str(match_date)[:10] if pd.notna(match_date) else ""
+            matches_list.append({
+                "id": len(matches_list) + 1,
+                "home_team": home_team,
+                "away_team": away_team,
+                "date": date_str,
+                "predicted_outcome": pred_display,
+                "actual_outcome": actual_outcome,
+                "actual_score": actual_score,
+                "correct": is_correct,
+                "confidence": _confidence_to_str(conf) if conf > 0 else "N/A",
+            })
+
+        total = len(matches_list)
+        accuracy = correct / total if total > 0 else 0.0
+
+        by_conf: Dict[str, Dict[str, Any]] = {}
+        for m in matches_list:
+            if m["correct"] is None:
+                continue  # Skip N/A predictions in accuracy breakdown
+            c = m["confidence"]
+            if c not in by_conf:
+                by_conf[c] = {"correct": 0, "total": 0}
+            by_conf[c]["total"] += 1
+            if m["correct"]:
+                by_conf[c]["correct"] += 1
+
+        def _conf_order(c: str) -> int:
+            order = ("Low", "Medium", "High")
+            return order.index(c) if c in order else 99
+
+        accuracy_by_confidence = [
+            {
+                "confidence": c,
+                "accuracy": d["correct"] / d["total"] if d["total"] > 0 else 0,
+                "count": d["total"],
+            }
+            for c, d in sorted(by_conf.items(), key=lambda x: _conf_order(x[0]))
+        ]
+
+        # accuracy_by_period: group by month (YYYY-MM) for performance over time
+        period_data: Dict[str, Dict[str, Any]] = {}
+        for m in matches_list:
+            if m["correct"] is None:
+                continue
+            period = m["date"][:7] if m["date"] and len(m["date"]) >= 7 else "unknown"
+            if period not in period_data:
+                period_data[period] = {"correct": 0, "total": 0}
+            period_data[period]["total"] += 1
+            if m["correct"]:
+                period_data[period]["correct"] += 1
+        accuracy_by_period = [
+            {
+                "period": p,
+                "accuracy": d["correct"] / d["total"] if d["total"] > 0 else 0,
+                "correct": d["correct"],
+                "total": d["total"],
+            }
+            for p, d in sorted(period_data.items(), key=lambda x: x[0])
+        ]
+
+        return {
+            "summary": {
+                "total_matches": total,
+                "correct": correct,
+                "incorrect": incorrect,
+                "pending": 0,
+                "accuracy": accuracy,
+                "accuracy_by_confidence": accuracy_by_confidence,
+                "accuracy_by_period": accuracy_by_period,
+            },
+            "matches": matches_list,
+        }
+    except Exception as e:
+        print(f"[api] Benchmark error: {e}")
+        return {
+            "summary": {
+                "total_matches": 0,
+                "correct": 0,
+                "incorrect": 0,
+                "pending": 0,
+                "accuracy": 0.0,
+                "accuracy_by_confidence": [],
+                "accuracy_by_period": [],
+            },
+            "matches": [],
+        }
+
+
+@app.get("/twitter/feed")
+async def get_twitter_feed(handle: str = "OfficialPSL") -> Dict[str, Any]:
+    """
+    Get tweets from a Twitter user (e.g. @OfficialPSL).
+
+    Uses Twitter API v2 via backend proxy. Returns empty tweets when
+    TWITTER_BEARER_TOKEN is not configured or on API errors.
+    """
+    if not os.getenv("TWITTER_BEARER_TOKEN", "").strip():
+        return {
+            "tweets": [],
+            "error": "Twitter API not configured",
+        }
+    try:
+        # Strip @ from handle if present
+        username = handle.lstrip("@")
+        tweets = fetch_user_tweets(username, max_results=10)
+        return {"tweets": tweets}
+    except Exception as e:
+        return {
+            "tweets": [],
+            "error": str(e),
+        }
+
+
+@app.post("/scrape/refresh")
+async def trigger_scrape_refresh(wait: bool = False) -> Dict[str, str]:
+    """
+    Trigger a manual scrape to refresh fixtures and match results.
+
+    If wait=true, runs synchronously and returns when done.
+    Otherwise runs in background and returns immediately.
+    """
+    def run() -> None:
+        try:
+            from jobs.scraper import update_match_results, update_fixtures
+            update_match_results()
+            update_fixtures()
+        except Exception as e:
+            logger.error(f"Manual scrape failed: {e}", exc_info=True)
+
+    if wait:
+        run()
+        return {"message": "Scrape completed."}
+    threading.Thread(target=run, daemon=True).start()
+    return {"message": "Scrape started. Results will update shortly."}
 
 
 @app.get("/content/about")

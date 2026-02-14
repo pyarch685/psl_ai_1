@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, LogIn, Loader2 } from 'lucide-react';
+import { User, LogIn, Loader2, BarChart3 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,8 @@ export const NavHeader = () => {
   const [registerError, setRegisterError] = useState('');
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +90,27 @@ export const NavHeader = () => {
         <div className="flex items-center gap-2">
           <span className="text-2xl">⚽</span>
           <span className="font-display text-xl font-bold text-primary">PSL Predictor</span>
+        </div>
+
+        {/* Nav Links */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant={location.pathname === '/' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => navigate('/')}
+            className="gap-1"
+          >
+            ⚽ <span className="hidden sm:inline">Predictor</span>
+          </Button>
+          <Button
+            variant={location.pathname === '/benchmark' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => navigate('/benchmark')}
+            className="gap-1"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Benchmark</span>
+          </Button>
         </div>
 
         {/* Auth Buttons */}

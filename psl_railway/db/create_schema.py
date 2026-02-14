@@ -89,7 +89,9 @@ def create_fixtures_table() -> None:
     - home_team: Home team name
     - away_team: Away team name
     - venue: Match venue (nullable)
-    - status: Match status (on schedule, postponed, delayed)
+    - home_goals: Home team goals (nullable, populated when match completed)
+    - away_goals: Away team goals (nullable, populated when match completed)
+    - status: Match status (on schedule, postponed, delayed, completed, scheduled)
     - created_at: Record creation timestamp
     - updated_at: Record update timestamp
     """
@@ -103,8 +105,10 @@ def create_fixtures_table() -> None:
             home_team TEXT NOT NULL,
             away_team TEXT NOT NULL,
             venue TEXT,
+            home_goals INTEGER,
+            away_goals INTEGER,
             status TEXT NOT NULL DEFAULT 'on schedule' 
-                CHECK (status IN ('on schedule', 'postponed', 'delayed', 'completed')),
+                CHECK (status IN ('on schedule', 'postponed', 'delayed', 'completed', 'scheduled')),
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW(),
             
@@ -120,6 +124,13 @@ def create_fixtures_table() -> None:
     try:
         with engine.begin() as conn:
             conn.execute(create_table_sql)
+            # Migration: add home_goals/away_goals to existing fixtures tables
+            conn.execute(text(
+                "ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS home_goals INTEGER"
+            ))
+            conn.execute(text(
+                "ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS away_goals INTEGER"
+            ))
         logger.info("[db] fixtures table created/verified")
     except Exception as e:
         logger.error(f"[db] Failed to create fixtures table: {e}", exc_info=True)

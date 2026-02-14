@@ -121,9 +121,9 @@ def start_scheduler() -> None:
     start multiple schedulers.
 
     Registers three jobs:
-    - update_match_results: Runs every 6 hours
-    - update_fixtures: Runs every 12 hours
-    - retrain_model: Runs every 2 weeks (14 days)
+    - update_match_results: Runs every hour
+    - update_fixtures: Runs every hour
+    - retrain_model: Runs every 7 days
     """
     global _scheduler
 
@@ -145,7 +145,7 @@ def start_scheduler() -> None:
     _scheduler.add_job(
         update_match_results,
         trigger="interval",
-        hours=6,
+        hours=1,
         id="update_match_results",
         replace_existing=True,
     )
@@ -153,7 +153,7 @@ def start_scheduler() -> None:
     _scheduler.add_job(
         update_fixtures,
         trigger="interval",
-        hours=12,
+        hours=1,
         id="update_fixtures",
         replace_existing=True,
     )
@@ -161,12 +161,27 @@ def start_scheduler() -> None:
     _scheduler.add_job(
         retrain_model,
         trigger="interval",
-        days=14,  # Every 2 weeks
+        days=7,
         id="retrain_model",
         replace_existing=True,
     )
 
     _scheduler.start()
+
+    # Run scraper immediately on startup (don't wait for first interval)
+    def _run_on_startup() -> None:
+        try:
+            update_match_results()
+            update_fixtures()
+            print("[scheduler] Startup scrape completed")
+        except Exception as e:
+            logger.warning(f"[scheduler] Startup scrape failed: {e}")
+            print(f"[scheduler] Startup scrape failed: {e}")
+
+    try:
+        _scheduler.executors["default"].submit(_run_on_startup)
+    except Exception as e:
+        logger.warning(f"[scheduler] Could not submit startup scrape: {e}")
 
     print("[scheduler] Scheduler started")
     print("[scheduler] Jobs registered:")
