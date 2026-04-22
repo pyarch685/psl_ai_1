@@ -17,12 +17,15 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import bcrypt
 from jose import JWTError, jwt
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy import text
 
 # Load environment variables from .env file if it exists
@@ -45,14 +48,15 @@ from core.prediction import (
 from core.model_store import save_model, load_model
 from core.email_utils import send_password_reset_email, send_password_reset_confirmation_email
 from db.engine import get_db_engine
-from app.twitter_client import fetch_user_tweets
+from app.twitter_client import fetch_user_tweets_result
+from config.production import get_allowed_origins, get_jwt_expiration_minutes, is_production
 
 logger = logging.getLogger(__name__)
 
 # JWT Configuration
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = get_jwt_expiration_minutes()
 
 # Security
 security = HTTPBearer()
@@ -60,17 +64,52 @@ security = HTTPBearer()
 app = FastAPI(
     title="PSL Soccer Predictor API",
     description="API for Premier Soccer League match predictions",
-    version="1.0.0"
+    version="1.0.0",
+    docs_url=None if is_production() else "/docs",
+    redoc_url=None if is_production() else "/redoc",
+    openapi_url=None if is_production() else "/openapi.json",
 )
+
+allowed_origins = get_allowed_origins()
+if not allowed_origins:
+    allowed_origins = ["http://localhost:8080", "http://localhost:5173"]
 
 # Enable CORS for web frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend domain
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next) -> Response:
+    """
+    Add baseline security headers to every HTTP response.
+    """
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "img-src 'self' data: https:; "
+        "script-src 'self' 'unsafe-inline' https://platform.twitter.com; "
+        "style-src 'self' 'unsafe-inline'; "
+        "connect-src 'self' https:; "
+        "frame-src https://platform.twitter.com https://syndication.twitter.com;"
+    )
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains; preload"
+        )
+    return response
 
 # Load saved model on startup
 @app.on_event("startup")
@@ -228,12 +267,12 @@ async def root() -> Dict[str, Any]:
         "endpoints": {
             "/teams": "Get list of all teams",
             "/predict": "Make a prediction for a match",
-            "/fixtures": "Get upcoming fixtures with predictions",
+            "/fixtures": "Get upcoming fixtures with predictions (auth required)",
             "/train": "Train/retrain the model",
-            "/model/status": "Get current model status",
-            "/benchmark": "Get predictions vs actual results (performance over time)",
+            "/model/status": "Get current model status (auth required)",
+            "/benchmark": "Get predictions vs actual results (performance over time, auth required)",
             "/twitter/feed": "Get tweets from @OfficialPSL (Fan Zone)",
-            "/scrape/refresh": "Trigger manual scrape to refresh benchmark data",
+            "/scrape/refresh": "Trigger manual scrape to refresh benchmark data (auth required)",
             "/auth/register": "Register a new user account",
             "/auth/login": "Login to user account",
             "/auth/forgot-password": "Request password reset email",
@@ -624,7 +663,9 @@ async def train_model(request: TrainRequest) -> TrainResponse:
 
 
 @app.get("/model/status")
-async def get_model_status() -> Dict[str, Any]:
+async def get_model_status(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+) -> Dict[str, Any]:
     """
     Get current model status and parameters.
 
@@ -674,7 +715,9 @@ def _outcome_to_display(outcome: str) -> str:
 
 
 @app.get("/benchmark")
-async def get_benchmark_results() -> Dict[str, Any]:
+async def get_benchmark_results(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+) -> Dict[str, Any]:
     """
     Get benchmark results: predictions vs actual match results.
 
@@ -872,10 +915,12 @@ async def get_twitter_feed(handle: str = "OfficialPSL") -> Dict[str, Any]:
             "error": "Twitter API not configured",
         }
     try:
-        # Strip @ from handle if present
         username = handle.lstrip("@")
-        tweets = fetch_user_tweets(username, max_results=10)
-        return {"tweets": tweets}
+        result = fetch_user_tweets_result(username, max_results=10)
+        payload: Dict[str, Any] = {"tweets": result.get("tweets", [])}
+        if result.get("error"):
+            payload["error"] = result["error"]
+        return payload
     except Exception as e:
         return {
             "tweets": [],
@@ -884,7 +929,10 @@ async def get_twitter_feed(handle: str = "OfficialPSL") -> Dict[str, Any]:
 
 
 @app.post("/scrape/refresh")
-async def trigger_scrape_refresh(wait: bool = False) -> Dict[str, str]:
+async def trigger_scrape_refresh(
+    wait: bool = False,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+) -> Dict[str, str]:
     """
     Trigger a manual scrape to refresh fixtures and match results.
 
@@ -1094,7 +1142,8 @@ def hash_token(token: str) -> str:
 
 
 @app.post("/auth/register", response_model=RegisterResponse)
-async def register_user(request: RegisterRequest) -> RegisterResponse:
+@limiter.limit("5/minute")
+async def register_user(request: Request, payload: RegisterRequest) -> RegisterResponse:
     """
     Register a new user account.
 
@@ -1108,17 +1157,17 @@ async def register_user(request: RegisterRequest) -> RegisterResponse:
         HTTPException: If registration fails or email already exists.
     """
     # Validate email format
-    if not validate_email(request.email):
+    if not validate_email(payload.email):
         raise HTTPException(
             status_code=400,
             detail="Invalid email format"
         )
     
     # Normalize email (lowercase)
-    email = request.email.lower().strip()
+    email = payload.email.lower().strip()
     
     # Validate password strength
-    is_valid, error_msg = validate_password_strength(request.password)
+    is_valid, error_msg = validate_password_strength(payload.password)
     if not is_valid:
         raise HTTPException(
             status_code=400,
@@ -1139,7 +1188,7 @@ async def register_user(request: RegisterRequest) -> RegisterResponse:
                 )
         
         # Hash password and insert user
-        password_hash = hash_password(request.password)
+        password_hash = hash_password(payload.password)
         
         with engine.begin() as conn:
             insert_user = text("""
@@ -1168,7 +1217,8 @@ async def register_user(request: RegisterRequest) -> RegisterResponse:
 
 
 @app.post("/auth/login", response_model=LoginResponse)
-async def login_user(request: LoginRequest) -> LoginResponse:
+@limiter.limit("10/minute")
+async def login_user(request: Request, payload: LoginRequest) -> LoginResponse:
     """
     Authenticate a user and log them in.
 
@@ -1182,7 +1232,7 @@ async def login_user(request: LoginRequest) -> LoginResponse:
         HTTPException: If login fails (invalid credentials or account inactive).
     """
     # Normalize email (lowercase)
-    email = request.email.lower().strip()
+    email = payload.email.lower().strip()
     
     try:
         engine = get_db_engine()
@@ -1213,7 +1263,7 @@ async def login_user(request: LoginRequest) -> LoginResponse:
                 )
             
             # Verify password
-            if not verify_password(request.password, password_hash):
+            if not verify_password(payload.password, password_hash):
                 raise HTTPException(
                     status_code=401,
                     detail="Invalid email or password"
