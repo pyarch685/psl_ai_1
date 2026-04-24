@@ -663,11 +663,14 @@ async def train_model(request: TrainRequest) -> TrainResponse:
 
 
 @app.get("/model/status")
-async def get_model_status(
-    current_user: Dict[str, Any] = Depends(get_current_user)
-) -> Dict[str, Any]:
+async def get_model_status() -> Dict[str, Any]:
     """
     Get current model status and parameters.
+
+    Public endpoint: returns only non-sensitive model metadata
+    (trained flag, accuracy, last trained timestamp, total predictions).
+    Exposed to anonymous visitors so the landing page can render a
+    model-health indicator without forcing login.
 
     Returns:
         Dict containing model training status and parameters.
