@@ -43,9 +43,12 @@ env/
 htmlcov/
 .tox/
 
-# Documentation
+# Documentation (exclude all by default, then whitelist runtime content files)
 *.md
-docs/
+docs/*
+!docs/about_soccer_predictor.txt
+!docs/virtualsite_contact_details.txt
+!docs/virtualsite_disclaimer_notice.txt
 
 # Data files (exclude from Docker image - use volumes)
 data/seasons/
