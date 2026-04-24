@@ -417,7 +417,6 @@ def tune_elo(history: pd.DataFrame) -> Tuple[float, float]:
             base = Pipeline([
                 ("scaler", StandardScaler()),
                 ("clf", LogisticRegression(
-                    multi_class="multinomial",
                     max_iter=1000,
                     C=2.0
                 ))
@@ -480,7 +479,6 @@ def train_classifier(
         )
     else:
         base_clf = LogisticRegression(
-            multi_class="multinomial",
             max_iter=1000,
             C=2.0
         )
