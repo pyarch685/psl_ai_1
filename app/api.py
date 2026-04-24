@@ -683,9 +683,8 @@ async def get_model_status() -> Dict[str, Any]:
             "message": "Model not trained yet"
         }
 
-    # Check if model file exists on disk
-    from core.model_store import MODEL_PATH
-    model_on_disk = MODEL_PATH.exists()
+    from core.model_store import _model_path
+    model_on_disk = _model_path().exists()
 
     return {
         "trained": True,

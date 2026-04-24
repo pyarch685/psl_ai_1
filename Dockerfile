@@ -35,10 +35,6 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY . .
 
 RUN mkdir -p /data/models
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app /data
-
-USER appuser
 
 EXPOSE 8000
 
