@@ -21,11 +21,12 @@ import os
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
-from pydantic import BaseModel
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from core import wc2026_prediction
+from core.fifa_rankings import has_rank
 from db.engine import get_db_engine
 from db.seed_wc2026 import GROUPS as STATIC_GROUPS
 
@@ -94,6 +95,30 @@ class PaystackInitRequest(BaseModel):
     item_key: str
     amount_usd: float
     callback_url: Optional[str] = None
+
+
+class WcPredictionRequest(BaseModel):
+    """Request body for POST /wc2026/predict."""
+
+    home_team: str = Field(..., min_length=1, max_length=80)
+    away_team: str = Field(..., min_length=1, max_length=80)
+
+
+class WcPredictionResponse(BaseModel):
+    """
+    Response envelope for POST /wc2026/predict.
+
+    Shape mirrors `/predict` so the existing frontend transformer in
+    `src/wc2026/lib/api.ts` can consume both. `model_version` is added so
+    Phase 2 ML upgrades are visible client-side.
+    """
+
+    home_team: str
+    away_team: str
+    probabilities: Dict[str, float]
+    predicted_outcome: str
+    confidence: float
+    model_version: str
 
 
 # ---------- Helpers ----------------------------------------------------------
@@ -325,6 +350,7 @@ def _build_group_predictions(group_name: str) -> GroupPredictionsResponse:
 def register_wc2026_routes(
     app: FastAPI,
     get_current_user: Callable[..., Any],
+    limiter: Any = None,
 ) -> None:
     """
     Attach WC2026 routes to an existing FastAPI app.
@@ -332,7 +358,19 @@ def register_wc2026_routes(
     Args:
         app: The FastAPI app instance from `app/api.py`.
         get_current_user: The JWT-validating dependency from `app/api.py`.
+        limiter: Optional slowapi Limiter from `app/api.py`. When provided,
+            POST /wc2026/predict is rate-limited per remote IP (same policy
+            as the PSL /predict endpoint). Optional so existing test
+            fixtures that call this helper without a limiter still pass.
     """
+
+    # Resolve an effective rate-limit decorator that's a no-op when no
+    # limiter was supplied (keeps tests / standalone use simple).
+    if limiter is not None:
+        _wc_predict_limit = limiter.limit("20/minute")
+    else:
+        def _wc_predict_limit(fn):  # type: ignore[misc]
+            return fn
 
     @app.get("/groups/standings", response_model=GroupStandingsResponse)
     async def get_groups_standings() -> GroupStandingsResponse:
@@ -389,6 +427,76 @@ def register_wc2026_routes(
                 status_code=500,
                 detail="Failed to compute group predictions.",
             )
+
+    @app.post("/wc2026/predict", response_model=WcPredictionResponse)
+    @_wc_predict_limit
+    async def predict_wc2026_match(
+        request: Request,  # noqa: ARG001 — required by slowapi keying
+        payload: WcPredictionRequest,
+    ) -> WcPredictionResponse:
+        """
+        Predict outcome probabilities for an arbitrary WC2026 match.
+
+        Public + rate-limited (same policy as the PSL /predict endpoint).
+        Uses the FIFA-Elo Phase 1 model in `core/wc2026_prediction.py` so
+        national-team probabilities are coherent (the PSL model only knows
+        about PSL clubs and returns near-uniform output for national teams).
+
+        Rejects unknown team names with HTTP 400 — better to fail loudly
+        than silently fall back to the default rank and ship a misleading
+        probability triplet.
+        """
+        home = payload.home_team.strip()
+        away = payload.away_team.strip()
+
+        if not home or not away:
+            raise HTTPException(
+                status_code=400,
+                detail="home_team and away_team are required.",
+            )
+        if home.lower() == away.lower():
+            raise HTTPException(
+                status_code=400,
+                detail="home_team and away_team must be different.",
+            )
+
+        # Reject unknown team names explicitly. `wc2026_prediction.predict`
+        # would otherwise silently use DEFAULT_RANK and emit a misleading
+        # probability triplet — better to fail loudly so the frontend can
+        # surface a clear error to the user.
+        if not has_rank(home):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown team: {home}.",
+            )
+        if not has_rank(away):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown team: {away}.",
+            )
+
+        try:
+            probabilities = wc2026_prediction.predict(home, away)
+            outcome = wc2026_prediction.outcome_from_probs(probabilities)
+            confidence = probabilities[outcome]
+        except Exception as exc:
+            logger.error(
+                f"[wc2026] /wc2026/predict failed for {home} vs {away}: {exc}",
+                exc_info=True,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to compute WC2026 prediction.",
+            )
+
+        return WcPredictionResponse(
+            home_team=home,
+            away_team=away,
+            probabilities=probabilities,
+            predicted_outcome=outcome,
+            confidence=confidence,
+            model_version=wc2026_prediction.MODEL_VERSION,
+        )
 
     # ---------- Phase 1 payment / unlock stubs --------------------------------
 

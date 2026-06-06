@@ -1,0 +1,4 @@
+[submodule "web/vuvuzela-vibes-predictor"]
+	path = web/vuvuzela-vibes-predictor
+	url = https://github.com/pyarch685/vuvuzela-vibes-predictor.git
+	branch = main

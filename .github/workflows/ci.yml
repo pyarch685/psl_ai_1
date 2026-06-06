@@ -11,6 +11,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        # The WC2026 frontend lives in a submodule under
+        # `web/vuvuzela-vibes-predictor`. Backend tests don't need it directly,
+        # but `submodules: recursive` keeps both jobs consistent and lets
+        # backend-side scripts that inspect the frontend tree (if any are
+        # added later) work without surprises.
+        with:
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -18,9 +25,12 @@ jobs:
           python-version: "3.12"
 
       - name: Install backend dependencies
+        # Pulls production deps + the pytest stack from requirements-dev.txt.
+        # `pytest` is intentionally NOT in requirements.txt — production
+        # images on Railway should ship without test tooling.
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Run backend tests
         run: pytest -q
@@ -33,6 +43,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        # `web/vuvuzela-vibes-predictor` is a git submodule; without
+        # `submodules: recursive` the working directory ends up empty on the
+        # runner and `npm ci` (or even setup-node's cache lookup) fails to
+        # resolve `package-lock.json`.
+        with:
+          submodules: recursive
 
       - name: Setup Node
         uses: actions/setup-node@v4

@@ -36,7 +36,7 @@ core/email_utils.py                           - Email sending utilities
 db/migrations/__init__.py                     - Migrations package
 db/migrations/001_add_password_reset_tokens.py - Database migration
 docs/password_reset.md                        - Detailed documentation
-tests/test_password_reset.py                  - Manual test script
+scripts/manual_password_reset.py              - Manual interactive test script
 .env.example                                  - Configuration template
 PASSWORD_RESET_IMPLEMENTATION.md              - Implementation summary
 IMPLEMENTATION_COMPLETE.md                    - This file
@@ -82,8 +82,8 @@ DISABLE_EMAIL=true
 # Start the API server
 python main.py
 
-# In another terminal, run the test script
-python -m tests.test_password_reset
+# In another terminal, run the manual interactive script
+python scripts/manual_password_reset.py
 ```
 
 ## API Usage
