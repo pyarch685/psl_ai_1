@@ -4,7 +4,7 @@ Train Model
    ↓
 Generate Predictions
    ↓
-Save predictions in PostgreSQL
+Save predictions in PostgreSQL  [implemented: jobs/scheduler.py -> persist_fixture_predictions]
    ↓
 Frontend fetches predictions via API
 
