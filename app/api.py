@@ -20,7 +20,7 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Depends, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 import bcrypt
 from jose import JWTError, jwt
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -210,8 +210,14 @@ class FeedbackResponse(BaseModel):
 
 class RegisterRequest(BaseModel):
     """Request model for user registration."""
+
+    model_config = ConfigDict(extra="ignore")
+
     email: str
     password: str
+    # The WC2026 frontend posts `username` alongside email — accept it for
+    # contract compatibility (Phase 1 ignores it; Phase 2 may persist).
+    username: Optional[str] = None
 
 
 class RegisterResponse(BaseModel):
@@ -223,8 +229,14 @@ class RegisterResponse(BaseModel):
 
 class LoginRequest(BaseModel):
     """Request model for user login."""
+
+    model_config = ConfigDict(extra="ignore")
+
     email: str
     password: str
+    # Accept the optional `username` field the WC2026 frontend submits so
+    # Pydantic doesn't reject the request. Phase 1 does not use it.
+    username: Optional[str] = None
 
 
 class LoginResponse(BaseModel):
@@ -248,9 +260,30 @@ class ForgotPasswordResponse(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    """Request model for reset password."""
+    """
+    Request model for reset password.
+
+    Accepts both `new_password` (PSL frontend) and `password` (WC2026
+    frontend) in the body — whichever is present is used. This fixes a
+    production-broken reset flow where the WC2026 form posted
+    `{token, password}` and Pydantic 422'd because the field was named
+    `new_password`.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
     token: str
-    new_password: str
+    new_password: str = Field(default="", alias="new_password")
+    # Tolerated alias used by the WC2026 frontend.
+    password: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _coalesce_password(self) -> "ResetPasswordRequest":
+        if not self.new_password and self.password:
+            self.new_password = self.password
+        if not self.new_password:
+            raise ValueError("Password is required.")
+        return self
 
 
 class ResetPasswordResponse(BaseModel):
@@ -626,7 +659,15 @@ async def get_fixtures_with_predictions(
                 except (KeyError, AttributeError):
                     pass
 
+                fixture_id: Optional[int] = None
+                try:
+                    if "id" in row.index and pd.notna(row.id):
+                        fixture_id = int(row.id)
+                except (KeyError, AttributeError, ValueError, TypeError):
+                    fixture_id = None
+
                 predictions.append({
+                    "id": fixture_id,
                     "date": date_str,
                     "time": time_str,
                     "home_team": str(row.home_team),
@@ -1579,6 +1620,19 @@ async def reset_password(request: ResetPasswordRequest) -> ResetPasswordResponse
             status_code=500,
             detail="An error occurred while resetting your password. Please try again later."
         )
+
+
+try:
+    from app.wc2026_routes import register_wc2026_routes
+
+    register_wc2026_routes(app, get_current_user)
+except Exception as _wc_exc:
+    # Never block PSL startup on a WC2026 import/registration error.
+    logger.error(
+        f"[wc2026] Failed to register WC2026 routes: {_wc_exc}",
+        exc_info=True,
+    )
+    print(f"[wc2026] Warning: WC2026 routes not registered: {_wc_exc}")
 
 
 if __name__ == "__main__":

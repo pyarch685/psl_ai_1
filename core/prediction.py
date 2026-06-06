@@ -100,7 +100,7 @@ def load_fixtures(table_name: str = "fixtures") -> pd.DataFrame:
     table_name = sanitize_table_name(table_name)
     engine = get_db_engine()
     q = f"""
-        SELECT date, home_team, away_team, venue, status, home_goals, away_goals
+        SELECT id, date, home_team, away_team, venue, status, home_goals, away_goals
         FROM {table_name}
         ORDER BY date
     """
