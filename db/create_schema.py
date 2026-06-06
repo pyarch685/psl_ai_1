@@ -142,6 +142,11 @@ def create_predictions_table() -> None:
     - confidence: Highest probability value
     - model_version: Model version identifier
     - created_at: Prediction creation timestamp
+    - actual_outcome: Final outcome once the match is played (NULL until resolved)
+    - actual_home_goals: Final home score (NULL until resolved)
+    - actual_away_goals: Final away score (NULL until resolved)
+    - is_correct: Whether predicted_outcome matched actual_outcome
+    - resolved_at: Timestamp when the row was backfilled with the result
     """
     engine = get_db_engine()
 
@@ -167,7 +172,15 @@ def create_predictions_table() -> None:
             
             model_version TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT NOW(),
-            
+
+            -- Outcome columns (NULL until the match is played and resolved)
+            actual_outcome TEXT
+                CHECK (actual_outcome IN ('Home', 'Draw', 'Away')),
+            actual_home_goals INTEGER,
+            actual_away_goals INTEGER,
+            is_correct BOOLEAN,
+            resolved_at TIMESTAMP,
+
             UNIQUE (match_date, home_team, away_team),
             
             -- Ensure probabilities sum to approximately 1.0 (within tolerance)
@@ -181,6 +194,8 @@ def create_predictions_table() -> None:
             ON predictions(match_date);
         CREATE INDEX IF NOT EXISTS idx_predictions_teams 
             ON predictions(home_team, away_team);
+        CREATE INDEX IF NOT EXISTS idx_predictions_resolved_at
+            ON predictions(resolved_at);
         """
     )
 

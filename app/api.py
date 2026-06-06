@@ -46,6 +46,12 @@ from core.prediction import (
     load_all_match_data,
 )
 from core.model_store import save_model, load_model
+from core.prediction_store import (
+    get_prediction_for_fixture,
+    insert_prediction_if_absent,
+    load_recent_resolved_predictions,
+    model_version_label,
+)
 from core.email_utils import send_password_reset_email, send_password_reset_confirmation_email
 from db.engine import get_db_engine
 from app.twitter_client import fetch_user_tweets_result
@@ -525,16 +531,71 @@ async def get_fixtures_with_predictions(
                 "message": "No upcoming fixtures found"
             }
 
+        engine = get_db_engine()
+        model_version = model_version_label(_model_cache)
+
         predictions = []
         for _, row in upcoming.iterrows():
             try:
-                probs = predict_softmax(
-                    _model_cache,
-                    row.home_team,
-                    row.away_team
-                )
-                predicted_outcome = max(probs.items(), key=lambda x: x[1])[0]
-                confidence = probs[predicted_outcome]
+                home_team = str(row.home_team).strip()
+                away_team = str(row.away_team).strip()
+                match_date_obj = row.date.date() if pd.notna(row.date) else None
+
+                stored = None
+                if match_date_obj is not None:
+                    try:
+                        stored = get_prediction_for_fixture(
+                            match_date=match_date_obj,
+                            home_team=home_team,
+                            away_team=away_team,
+                            engine=engine,
+                        )
+                    except Exception as lookup_exc:
+                        # DB lookup failures should not block live computation
+                        print(f"[api] Warning: prediction lookup failed: {lookup_exc}")
+
+                if stored is not None:
+                    probs = {
+                        "Home": float(stored["home_win_prob"]),
+                        "Draw": float(stored["draw_prob"]),
+                        "Away": float(stored["away_win_prob"]),
+                    }
+                    predicted_outcome = stored["predicted_outcome"] or max(
+                        probs.items(), key=lambda x: x[1]
+                    )[0]
+                    confidence = float(
+                        stored["confidence"]
+                        if stored["confidence"] is not None
+                        else probs[predicted_outcome]
+                    )
+                else:
+                    probs = predict_softmax(
+                        _model_cache,
+                        home_team,
+                        away_team,
+                    )
+                    predicted_outcome = max(probs.items(), key=lambda x: x[1])[0]
+                    confidence = probs[predicted_outcome]
+
+                    # Persist the live-computed prediction so the next request
+                    # serves it from the DB. Fixture is upcoming, so this is
+                    # still a genuine pre-match prediction (no hindsight).
+                    if match_date_obj is not None:
+                        try:
+                            insert_prediction_if_absent(
+                                engine=engine,
+                                match_date=match_date_obj,
+                                home_team=home_team,
+                                away_team=away_team,
+                                probs=probs,
+                                model_version=model_version,
+                            )
+                        except Exception as insert_exc:
+                            print(
+                                f"[api] Warning: failed to persist /fixtures "
+                                f"prediction for {home_team} vs {away_team}: "
+                                f"{insert_exc}"
+                            )
 
                 # Extract date and time from datetime
                 date_obj = row.date if pd.notna(row.date) else None
@@ -716,191 +777,147 @@ def _outcome_to_display(outcome: str) -> str:
     return mapping.get(outcome, outcome)
 
 
+def _empty_benchmark(message: Optional[str] = None) -> Dict[str, Any]:
+    """Empty benchmark payload with optional status message."""
+    payload: Dict[str, Any] = {
+        "summary": {
+            "total_matches": 0,
+            "correct": 0,
+            "incorrect": 0,
+            "pending": 0,
+            "accuracy": 0.0,
+            "accuracy_by_confidence": [],
+            "accuracy_by_period": [],
+        },
+        "matches": [],
+    }
+    if message:
+        payload["message"] = message
+    return payload
+
+
 @app.get("/benchmark")
 async def get_benchmark_results(
     current_user: Dict[str, Any] = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Get benchmark results: predictions vs actual match results.
+    Get benchmark results from the persisted predictions table.
 
-    Uses only completed fixtures from the database (scraped from psl.co.za
-    Match Centre). Returns summary, matches, and accuracy_by_period for
+    Reads only rows with ``resolved_at IS NOT NULL`` — i.e. predictions
+    that were frozen before kickoff by the scheduler and later backfilled
+    with the actual result. The model is NOT re-run on the request path,
+    so the table reflects honest pre-match performance.
+
+    Returns summary, matches, and accuracy_by_period for the
     performance-over-time trend.
     """
-    global _model_cache
-
-    if _model_cache is None:
-        return {
-            "summary": {
-                "total_matches": 0,
-                "correct": 0,
-                "incorrect": 0,
-                "pending": 0,
-                "accuracy": 0.0,
-                "accuracy_by_confidence": [],
-                "accuracy_by_period": [],
-            },
-            "matches": [],
-            "message": "Model not trained. Train the model first to see benchmark results.",
-        }
-
     try:
-        engine = get_db_engine()
-        q = text("""
-            SELECT date, home_team, away_team, home_goals, away_goals
-            FROM fixtures
-            WHERE home_goals IS NOT NULL AND away_goals IS NOT NULL
-            ORDER BY date DESC
-            LIMIT 200
-        """)
-        with engine.connect() as conn:
-            rows = conn.execute(q).fetchall()
-        combined = pd.DataFrame(
-            rows,
-            columns=["date", "home_team", "away_team", "home_goals", "away_goals"],
+        resolved = load_recent_resolved_predictions(limit=200)
+    except Exception as exc:
+        print(f"[api] Benchmark error: {exc}")
+        return _empty_benchmark()
+
+    if not resolved:
+        return _empty_benchmark(
+            "No resolved predictions yet. The scheduler captures pre-match "
+            "probabilities for upcoming fixtures; rows appear here once "
+            "matches are played and the result is backfilled."
         )
-        if combined.empty:
-            return {
-                "summary": {
-                    "total_matches": 0,
-                    "correct": 0,
-                    "incorrect": 0,
-                    "pending": 0,
-                    "accuracy": 0.0,
-                    "accuracy_by_confidence": [],
-                    "accuracy_by_period": [],
-                },
-                "matches": [],
-                "message": "No completed match results in database. The scheduler scrapes fixtures from psl.co.za; ensure the app has been running and matches have been played.",
-            }
 
-        matches_list: List[Dict[str, Any]] = []
-        correct = 0
-        incorrect = 0
+    matches_list: List[Dict[str, Any]] = []
+    correct = 0
+    incorrect = 0
 
-        for idx, row in combined.iterrows():
-            match_date = row["date"]
-            home_team = str(row["home_team"]).strip()
-            away_team = str(row["away_team"]).strip()
-            hg = row["home_goals"]
-            ag = row["away_goals"]
+    for row in resolved:
+        hg = row.get("actual_home_goals")
+        ag = row.get("actual_away_goals")
+        if hg is None or ag is None:
+            continue
+        actual_score = f"{int(hg)}-{int(ag)}"
+        actual_display = _outcome_to_display(row.get("actual_outcome") or "")
+        pred_display = _outcome_to_display(row.get("predicted_outcome") or "")
+        conf_value = row.get("confidence") or 0.0
+        conf_label = _confidence_to_str(float(conf_value)) if conf_value else "N/A"
+        is_correct = row.get("is_correct")
+        if is_correct is True:
+            correct += 1
+        elif is_correct is False:
+            incorrect += 1
 
-            if pd.isna(hg) or pd.isna(ag):
-                continue
+        match_date = row.get("match_date")
+        date_str = match_date.strftime("%Y-%m-%d") if match_date else ""
 
-            hg, ag = int(hg), int(ag)
-            actual_score = f"{hg}-{ag}"
-            if hg > ag:
-                actual_outcome = "Home Win"
-            elif hg == ag:
-                actual_outcome = "Draw"
-            else:
-                actual_outcome = "Away Win"
+        matches_list.append({
+            "id": len(matches_list) + 1,
+            "home_team": str(row.get("home_team", "")).strip(),
+            "away_team": str(row.get("away_team", "")).strip(),
+            "date": date_str,
+            "predicted_outcome": pred_display,
+            "actual_outcome": actual_display,
+            "actual_score": actual_score,
+            "correct": is_correct,
+            "confidence": conf_label,
+        })
 
-            pred_display = "N/A"
-            is_correct: Optional[bool] = None
-            conf = 0.0
-            try:
-                probs = predict_softmax(_model_cache, home_team, away_team)
-                pred_outcome = max(probs.items(), key=lambda x: x[1])[0]
-                conf = probs[pred_outcome]
-                pred_display = _outcome_to_display(pred_outcome)
-                is_correct = pred_display == actual_outcome
-                if is_correct:
-                    correct += 1
-                else:
-                    incorrect += 1
-            except Exception:
-                # Include match anyway so user sees actual results; prediction N/A
-                pass
+    total = len(matches_list)
+    accuracy = correct / total if total > 0 else 0.0
 
-            date_str = str(match_date)[:10] if pd.notna(match_date) else ""
-            matches_list.append({
-                "id": len(matches_list) + 1,
-                "home_team": home_team,
-                "away_team": away_team,
-                "date": date_str,
-                "predicted_outcome": pred_display,
-                "actual_outcome": actual_outcome,
-                "actual_score": actual_score,
-                "correct": is_correct,
-                "confidence": _confidence_to_str(conf) if conf > 0 else "N/A",
-            })
+    by_conf: Dict[str, Dict[str, Any]] = {}
+    for m in matches_list:
+        if m["correct"] is None:
+            continue
+        c = m["confidence"]
+        if c not in by_conf:
+            by_conf[c] = {"correct": 0, "total": 0}
+        by_conf[c]["total"] += 1
+        if m["correct"]:
+            by_conf[c]["correct"] += 1
 
-        total = len(matches_list)
-        accuracy = correct / total if total > 0 else 0.0
+    def _conf_order(c: str) -> int:
+        order = ("Low", "Medium", "High")
+        return order.index(c) if c in order else 99
 
-        by_conf: Dict[str, Dict[str, Any]] = {}
-        for m in matches_list:
-            if m["correct"] is None:
-                continue  # Skip N/A predictions in accuracy breakdown
-            c = m["confidence"]
-            if c not in by_conf:
-                by_conf[c] = {"correct": 0, "total": 0}
-            by_conf[c]["total"] += 1
-            if m["correct"]:
-                by_conf[c]["correct"] += 1
-
-        def _conf_order(c: str) -> int:
-            order = ("Low", "Medium", "High")
-            return order.index(c) if c in order else 99
-
-        accuracy_by_confidence = [
-            {
-                "confidence": c,
-                "accuracy": d["correct"] / d["total"] if d["total"] > 0 else 0,
-                "count": d["total"],
-            }
-            for c, d in sorted(by_conf.items(), key=lambda x: _conf_order(x[0]))
-        ]
-
-        # accuracy_by_period: group by month (YYYY-MM) for performance over time
-        period_data: Dict[str, Dict[str, Any]] = {}
-        for m in matches_list:
-            if m["correct"] is None:
-                continue
-            period = m["date"][:7] if m["date"] and len(m["date"]) >= 7 else "unknown"
-            if period not in period_data:
-                period_data[period] = {"correct": 0, "total": 0}
-            period_data[period]["total"] += 1
-            if m["correct"]:
-                period_data[period]["correct"] += 1
-        accuracy_by_period = [
-            {
-                "period": p,
-                "accuracy": d["correct"] / d["total"] if d["total"] > 0 else 0,
-                "correct": d["correct"],
-                "total": d["total"],
-            }
-            for p, d in sorted(period_data.items(), key=lambda x: x[0])
-        ]
-
-        return {
-            "summary": {
-                "total_matches": total,
-                "correct": correct,
-                "incorrect": incorrect,
-                "pending": 0,
-                "accuracy": accuracy,
-                "accuracy_by_confidence": accuracy_by_confidence,
-                "accuracy_by_period": accuracy_by_period,
-            },
-            "matches": matches_list,
+    accuracy_by_confidence = [
+        {
+            "confidence": c,
+            "accuracy": d["correct"] / d["total"] if d["total"] > 0 else 0,
+            "count": d["total"],
         }
-    except Exception as e:
-        print(f"[api] Benchmark error: {e}")
-        return {
-            "summary": {
-                "total_matches": 0,
-                "correct": 0,
-                "incorrect": 0,
-                "pending": 0,
-                "accuracy": 0.0,
-                "accuracy_by_confidence": [],
-                "accuracy_by_period": [],
-            },
-            "matches": [],
+        for c, d in sorted(by_conf.items(), key=lambda x: _conf_order(x[0]))
+    ]
+
+    period_data: Dict[str, Dict[str, Any]] = {}
+    for m in matches_list:
+        if m["correct"] is None:
+            continue
+        period = m["date"][:7] if m["date"] and len(m["date"]) >= 7 else "unknown"
+        if period not in period_data:
+            period_data[period] = {"correct": 0, "total": 0}
+        period_data[period]["total"] += 1
+        if m["correct"]:
+            period_data[period]["correct"] += 1
+    accuracy_by_period = [
+        {
+            "period": p,
+            "accuracy": d["correct"] / d["total"] if d["total"] > 0 else 0,
+            "correct": d["correct"],
+            "total": d["total"],
         }
+        for p, d in sorted(period_data.items(), key=lambda x: x[0])
+    ]
+
+    return {
+        "summary": {
+            "total_matches": total,
+            "correct": correct,
+            "incorrect": incorrect,
+            "pending": 0,
+            "accuracy": accuracy,
+            "accuracy_by_confidence": accuracy_by_confidence,
+            "accuracy_by_period": accuracy_by_period,
+        },
+        "matches": matches_list,
+    }
 
 
 @app.get("/twitter/feed")

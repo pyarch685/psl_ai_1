@@ -113,6 +113,83 @@ def retrain_model() -> None:
         # Don't raise - fail gracefully
 
 
+def _current_model() -> object:
+    """
+    Return the in-memory model from the API cache if available, otherwise
+    load it from disk. Returns ``None`` when no model is trained yet.
+    """
+    try:
+        import app.api as api_module
+        cached = getattr(api_module, "_model_cache", None)
+        if cached is not None:
+            return cached
+    except Exception:
+        pass
+
+    try:
+        from core.model_store import load_model
+        return load_model()
+    except Exception as exc:
+        logger.warning(f"[scheduler] Could not load model from disk: {exc}")
+        return None
+
+
+def persist_fixture_predictions() -> None:
+    """
+    Persist pre-match predictions for upcoming fixtures.
+
+    Insert-only: predictions already in the table are never overwritten,
+    preserving the original pre-match probabilities for ML evaluation.
+
+    Fails gracefully - logs errors but doesn't crash the scheduler.
+    """
+    try:
+        from core.prediction_store import persist_upcoming_fixture_predictions
+
+        model = _current_model()
+        if model is None:
+            logger.info(
+                "[scheduler] persist_fixture_predictions: no model available, skipping"
+            )
+            return
+
+        stats = persist_upcoming_fixture_predictions(model)
+        print(
+            "[scheduler] ✓ persist_fixture_predictions: "
+            f"inserted={stats['inserted']} skipped={stats['skipped']} "
+            f"failed={stats['failed']} considered={stats['considered']}"
+        )
+    except Exception as exc:
+        logger.error(
+            f"[scheduler] Failed to persist fixture predictions: {exc}",
+            exc_info=True,
+        )
+        print(f"[scheduler] ⚠️  persist_fixture_predictions failed: {exc}")
+
+
+def resolve_prediction_outcomes() -> None:
+    """
+    Backfill ``actual_*`` columns on predictions whose matches now have
+    final scores in the fixtures table.
+
+    Fails gracefully - logs errors but doesn't crash the scheduler.
+    """
+    try:
+        from core.prediction_store import resolve_completed_predictions
+
+        stats = resolve_completed_predictions()
+        if stats["resolved"]:
+            print(
+                f"[scheduler] ✓ resolve_prediction_outcomes: resolved={stats['resolved']}"
+            )
+    except Exception as exc:
+        logger.error(
+            f"[scheduler] Failed to resolve prediction outcomes: {exc}",
+            exc_info=True,
+        )
+        print(f"[scheduler] ⚠️  resolve_prediction_outcomes failed: {exc}")
+
+
 def start_scheduler() -> None:
     """
     Start the background scheduler.
@@ -120,9 +197,11 @@ def start_scheduler() -> None:
     This function is idempotent: calling it multiple times will not
     start multiple schedulers.
 
-    Registers three jobs:
+    Registers five jobs:
     - update_match_results: Runs every hour
     - update_fixtures: Runs every hour
+    - persist_fixture_predictions: Runs every hour (insert-only)
+    - resolve_prediction_outcomes: Runs every hour
     - retrain_model: Runs every 7 days
     """
     global _scheduler
@@ -159,6 +238,22 @@ def start_scheduler() -> None:
     )
 
     _scheduler.add_job(
+        persist_fixture_predictions,
+        trigger="interval",
+        hours=1,
+        id="persist_fixture_predictions",
+        replace_existing=True,
+    )
+
+    _scheduler.add_job(
+        resolve_prediction_outcomes,
+        trigger="interval",
+        hours=1,
+        id="resolve_prediction_outcomes",
+        replace_existing=True,
+    )
+
+    _scheduler.add_job(
         retrain_model,
         trigger="interval",
         days=7,
@@ -173,6 +268,8 @@ def start_scheduler() -> None:
         try:
             update_match_results()
             update_fixtures()
+            persist_fixture_predictions()
+            resolve_prediction_outcomes()
             print("[scheduler] Startup scrape completed")
         except Exception as e:
             logger.warning(f"[scheduler] Startup scrape failed: {e}")
