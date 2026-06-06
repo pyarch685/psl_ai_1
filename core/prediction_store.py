@@ -296,3 +296,71 @@ def load_resolved_predictions(
     with engine.connect() as conn:
         rows = conn.execute(text(base_sql), params).mappings().all()
     return [dict(row) for row in rows]
+
+
+def get_prediction_for_fixture(
+    *,
+    match_date: date,
+    home_team: str,
+    away_team: str,
+    engine: Optional[Engine] = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    Look up the stored prediction for a single fixture.
+
+    Returns ``None`` when the row does not exist yet (e.g. the scheduler
+    has not run since the fixture was scraped). Callers can fall back to
+    live computation in that case.
+    """
+    engine = engine or get_db_engine()
+    select_sql = text(
+        """
+        SELECT match_date, home_team, away_team,
+               home_win_prob, draw_prob, away_win_prob,
+               predicted_outcome, confidence, model_version,
+               actual_outcome, actual_home_goals, actual_away_goals,
+               is_correct, resolved_at, created_at
+        FROM predictions
+        WHERE match_date = :match_date
+          AND home_team = :home_team
+          AND away_team = :away_team
+        """
+    )
+    with engine.connect() as conn:
+        row = conn.execute(
+            select_sql,
+            {
+                "match_date": match_date,
+                "home_team": home_team,
+                "away_team": away_team,
+            },
+        ).mappings().first()
+    return dict(row) if row else None
+
+
+def load_recent_resolved_predictions(
+    limit: int = 200,
+    engine: Optional[Engine] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Return the most recent resolved predictions for the benchmark page.
+
+    Ordered by ``match_date DESC`` so the UI shows the latest results first.
+    """
+    engine = engine or get_db_engine()
+    select_sql = text(
+        """
+        SELECT match_date, home_team, away_team,
+               home_win_prob, draw_prob, away_win_prob,
+               predicted_outcome, confidence, model_version,
+               actual_outcome, actual_home_goals, actual_away_goals,
+               is_correct, resolved_at
+        FROM predictions
+        WHERE resolved_at IS NOT NULL
+        ORDER BY match_date DESC
+        LIMIT :limit
+        """
+    )
+    with engine.connect() as conn:
+        rows = conn.execute(select_sql, {"limit": int(limit)}).mappings().all()
+    return [dict(row) for row in rows]

@@ -30,7 +30,9 @@ from core import prediction_store
 from core.prediction_store import (
     _outcome_from_probs,
     _outcome_from_score,
+    get_prediction_for_fixture,
     insert_prediction_if_absent,
+    load_recent_resolved_predictions,
     model_version_label,
     persist_upcoming_fixture_predictions,
     resolve_completed_predictions,
@@ -373,3 +375,77 @@ def test_persist_inserts_upcoming_fixture(monkeypatch, engine):
     stats_again = persist_upcoming_fixture_predictions(fake_model, engine=engine)
     assert stats_again["inserted"] == 0
     assert stats_again["skipped"] == 1
+
+
+# ---------------------------------------------------------------------
+# Lookup helpers used by /fixtures and /benchmark
+# ---------------------------------------------------------------------
+
+
+def test_get_prediction_for_fixture_returns_none_when_missing(engine):
+    result = get_prediction_for_fixture(
+        match_date=date(2030, 1, 1),
+        home_team="Nobody",
+        away_team="Nobody Else",
+        engine=engine,
+    )
+    assert result is None
+
+
+def test_get_prediction_for_fixture_returns_stored_row(engine):
+    match_date = date(2026, 7, 1)
+    insert_prediction_if_absent(
+        engine=engine,
+        match_date=match_date,
+        home_team="Sundowns",
+        away_team="AmaZulu",
+        probs=_probs(0.55, 0.25, 0.20),
+        model_version="fixtures-v1",
+    )
+
+    result = get_prediction_for_fixture(
+        match_date=match_date,
+        home_team="Sundowns",
+        away_team="AmaZulu",
+        engine=engine,
+    )
+    assert result is not None
+    assert result["predicted_outcome"] == "Home"
+    assert result["confidence"] == pytest.approx(0.55)
+    assert result["home_win_prob"] == pytest.approx(0.55)
+    assert result["model_version"] == "fixtures-v1"
+
+
+def test_load_recent_resolved_predictions_orders_by_date_desc_and_limits(engine):
+    """Older matches come last; the newest resolved row is first."""
+    rows = [
+        (date(2026, 1, 10), "A", "B", 1, 0, "Home", True),
+        (date(2026, 2, 15), "C", "D", 0, 2, "Away", True),
+        (date(2026, 3, 20), "E", "F", 1, 1, "Draw", False),
+    ]
+    for d, h, a, hg, ag, actual, correct in rows:
+        _seed_prediction(engine, match_date=d, home=h, away=a, predicted="Home")
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    UPDATE predictions
+                    SET actual_outcome=:actual,
+                        actual_home_goals=:hg,
+                        actual_away_goals=:ag,
+                        is_correct=:correct,
+                        resolved_at=NOW()
+                    WHERE home_team=:h AND away_team=:a
+                    """
+                ),
+                {"actual": actual, "hg": hg, "ag": ag, "correct": correct, "h": h, "a": a},
+            )
+
+    # Add an unresolved row to confirm it is excluded.
+    _seed_prediction(engine, match_date=date(2026, 4, 1), home="X", away="Y")
+
+    result = load_recent_resolved_predictions(limit=2, engine=engine)
+    assert len(result) == 2
+    assert result[0]["home_team"] == "E"  # newest resolved match first
+    assert result[1]["home_team"] == "C"
+    assert all(r.get("resolved_at") is not None for r in result)
