@@ -1,10 +1,14 @@
 """
-Manual test script for password reset functionality.
+Manual interactive script for exercising the password reset flow.
 
-This script helps test the password reset flow manually.
-Run with: python -m tests.test_password_reset
+This is NOT a pytest suite — it makes live HTTP calls against a running
+local API server and uses `input()` to walk a human through the flow.
+Pytest used to auto-discover it (it was once named `tests/test_password_reset.py`)
+and treat its `test_*` functions' parameters as fixtures, causing CI errors;
+relocating it to `scripts/` and renaming it removes that ambiguity.
 
-Note: This is a manual test script, not an automated test suite.
+Run with:
+    python scripts/manual_password_reset.py
 """
 from __future__ import annotations
 
