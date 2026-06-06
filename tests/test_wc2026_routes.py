@@ -282,5 +282,84 @@ def test_refresh_endpoint_allows_admin(app_with_stub_user, monkeypatch):
     assert "message" in body and "updated_at" in body
 
 
+# ---------- POST /wc2026/predict --------------------------------------------
+
+def test_wc2026_predict_returns_valid_envelope(app_with_stub_user):
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+
+    resp = client.post(
+        "/wc2026/predict",
+        json={"home_team": "Argentina", "away_team": "Saudi Arabia"},
+    )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["home_team"] == "Argentina"
+    assert body["away_team"] == "Saudi Arabia"
+    assert set(body["probabilities"].keys()) == {"Home", "Draw", "Away"}
+    # Probabilities should sum to ~1.0 (allow tiny float drift).
+    total = sum(body["probabilities"].values())
+    assert abs(total - 1.0) < 1e-6
+    # Argentina is heavily favoured over Saudi Arabia per FIFA ranks.
+    assert body["predicted_outcome"] == "Home"
+    assert body["probabilities"]["Home"] > body["probabilities"]["Away"]
+    assert body["confidence"] == body["probabilities"]["Home"]
+    assert body["model_version"] == "fifa_elo_v1"
+
+
+def test_wc2026_predict_resolves_aliases(app_with_stub_user):
+    """Frontend may submit 'South Korea' or 'Iran' — both must resolve via alias."""
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+
+    resp = client.post(
+        "/wc2026/predict",
+        json={"home_team": "South Korea", "away_team": "Iran"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    # Endpoint echoes back the input (canonicalization happens in the
+    # ranking lookup, not in the response envelope).
+    assert body["home_team"] == "South Korea"
+    assert body["away_team"] == "Iran"
+
+
+def test_wc2026_predict_rejects_unknown_team(app_with_stub_user):
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+
+    resp = client.post(
+        "/wc2026/predict",
+        json={"home_team": "Atlantis", "away_team": "Brazil"},
+    )
+    assert resp.status_code == 400
+    assert "Atlantis" in resp.json()["detail"]
+
+
+def test_wc2026_predict_rejects_same_team(app_with_stub_user):
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+
+    resp = client.post(
+        "/wc2026/predict",
+        json={"home_team": "Brazil", "away_team": "Brazil"},
+    )
+    assert resp.status_code == 400
+
+
+def test_wc2026_predict_rejects_empty_team(app_with_stub_user):
+    """Pydantic min_length=1 should reject empty/whitespace input."""
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+
+    resp = client.post(
+        "/wc2026/predict",
+        json={"home_team": "", "away_team": "Brazil"},
+    )
+    # Pydantic's min_length=1 -> 422 (FastAPI validation error)
+    assert resp.status_code in (400, 422)
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

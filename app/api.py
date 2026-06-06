@@ -363,12 +363,18 @@ async def get_teams() -> Dict[str, Any]:
 
 
 @app.post("/predict", response_model=PredictionResponse)
-async def predict_match(request: PredictionRequest) -> PredictionResponse:
+@limiter.limit("20/minute")
+async def predict_match(request: Request, payload: PredictionRequest) -> PredictionResponse:
     """
     Make a prediction for a single match.
 
+    The endpoint is intentionally public (lets first-time visitors try the
+    predictor before signing up) but rate-limited per remote IP to discourage
+    abuse / scraping.
+
     Args:
-        request: PredictionRequest containing home_team and away_team.
+        request: FastAPI Request — required by slowapi's per-IP key function.
+        payload: PredictionRequest containing home_team and away_team.
 
     Returns:
         PredictionResponse with probabilities and predicted outcome.
@@ -390,15 +396,15 @@ async def predict_match(request: PredictionRequest) -> PredictionResponse:
     try:
         probabilities = predict_softmax(
             _model_cache,
-            request.home_team,
-            request.away_team
+            payload.home_team,
+            payload.away_team
         )
         predicted_outcome = max(probabilities.items(), key=lambda x: x[1])[0]
         confidence = probabilities[predicted_outcome]
 
         return PredictionResponse(
-            home_team=request.home_team,
-            away_team=request.away_team,
+            home_team=payload.home_team,
+            away_team=payload.away_team,
             probabilities=probabilities,
             predicted_outcome=predicted_outcome,
             confidence=confidence
@@ -1625,7 +1631,7 @@ async def reset_password(request: ResetPasswordRequest) -> ResetPasswordResponse
 try:
     from app.wc2026_routes import register_wc2026_routes
 
-    register_wc2026_routes(app, get_current_user)
+    register_wc2026_routes(app, get_current_user, limiter=limiter)
 except Exception as _wc_exc:
     # Never block PSL startup on a WC2026 import/registration error.
     logger.error(
