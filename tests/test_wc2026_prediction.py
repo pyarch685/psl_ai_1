@@ -94,9 +94,18 @@ def test_group_winner_probability_handles_empty_input():
     assert w.group_winner_probability([]) == {}
 
 
-def test_model_version_tag_is_stable():
-    # Phase 2 will introduce a new MODEL_VERSION; Phase 1 must be stable.
-    assert w.MODEL_VERSION == "fifa_elo_v1"
+def test_model_version_tag_reflects_active_model():
+    """MODEL_VERSION must advertise the model that's actually serving.
+
+    When the Davidson-BT artifact is present at module import the tag must
+    advertise `wc2026_davidson_bt_v1`; otherwise it falls back to the
+    Phase 1 FIFA-Elo tag (`fifa_elo_v1`). This is the contract the
+    prediction-store relies on to provenance-tag persisted rows.
+    """
+    if w._BT_ARTIFACT is not None:
+        assert w.MODEL_VERSION == "wc2026_davidson_bt_v1"
+    else:
+        assert w.MODEL_VERSION == "fifa_elo_v1"
 
 
 def test_rank_to_elo_is_monotonic_and_bounded():
