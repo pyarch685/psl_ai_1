@@ -357,6 +357,205 @@ def test_wc2026_fixtures_rejects_invalid_date_param(app_with_stub_user):
     assert resp.status_code == 422
 
 
+def test_wc2026_teams_returns_48_nations(app_with_stub_user):
+    """GET /wc2026/teams is public and returns the 48 nations alphabetically."""
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+    resp = client.get("/wc2026/teams")
+    assert resp.status_code == 200
+    body = resp.json()
+    teams = body["teams"]
+    assert len(teams) == 48
+    # Sorted alphabetically — "Algeria" first, "Uzbekistan" last when sorted.
+    assert teams == sorted(teams)
+    # Spot-check a handful that must be present from db.seed_wc2026.GROUPS.
+    for nation in ("Argentina", "Brazil", "England", "South Africa", "Mexico"):
+        assert nation in teams
+    # Ensure no PSL clubs slipped in.
+    for psl_club in ("Kaizer Chiefs", "Orlando Pirates", "Mamelodi Sundowns"):
+        assert psl_club not in teams
+
+
+def test_wc2026_user_predictions_empty_for_new_user(app_with_stub_user):
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+    resp = client.get("/wc2026/predictions")
+    assert resp.status_code == 200
+    assert resp.json() == {"predictions": []}
+
+
+def test_wc2026_upsert_group_predictions_persists_and_returns(app_with_stub_user):
+    app, engine, _user = app_with_stub_user
+    # Seed 3 scheduled fixtures in Group A.
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_fixtures "
+                "(match_date, kickoff_time, group_name, stage, home_team, away_team, "
+                " venue, status) VALUES "
+                "('2026-06-15', '20:00', 'Group A', 'group', 'Mexico', 'Korea Republic', "
+                " 'Estadio Azteca', 'scheduled'), "
+                "('2026-06-18', '15:00', 'Group A', 'group', 'Czechia', 'South Africa', "
+                " 'BMO Field', 'scheduled'), "
+                "('2026-06-22', '12:00', 'Group A', 'group', 'Mexico', 'Czechia', "
+                " 'Estadio Azteca', 'scheduled')"
+            )
+        )
+        fixture_ids = [
+            r[0]
+            for r in conn.execute(
+                text(
+                    "SELECT id FROM wc_fixtures WHERE group_name = 'Group A' "
+                    "ORDER BY match_date"
+                )
+            ).fetchall()
+        ]
+
+    client = TestClient(app)
+    resp = client.put(
+        "/wc2026/predictions/group/Group A",
+        json={
+            "picks": [
+                {"fixture_id": fixture_ids[0], "predicted_outcome": "Home"},
+                {"fixture_id": fixture_ids[1], "predicted_outcome": "Draw"},
+                {"fixture_id": fixture_ids[2], "predicted_outcome": "Away"},
+            ]
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["predictions"]) == 3
+    by_fix = {p["fixture_id"]: p for p in body["predictions"]}
+    assert by_fix[fixture_ids[0]]["predicted_outcome"] == "Home"
+    assert by_fix[fixture_ids[1]]["predicted_outcome"] == "Draw"
+    assert by_fix[fixture_ids[2]]["predicted_outcome"] == "Away"
+    # All three are scheduled → none locked yet.
+    assert all(p["locked"] is False for p in body["predictions"])
+
+    # Edit one prediction — should overwrite, not duplicate.
+    resp2 = client.put(
+        "/wc2026/predictions/group/Group A",
+        json={
+            "picks": [
+                {"fixture_id": fixture_ids[0], "predicted_outcome": "Away"},
+            ]
+        },
+    )
+    assert resp2.status_code == 200
+    by_fix2 = {p["fixture_id"]: p for p in resp2.json()["predictions"]}
+    assert by_fix2[fixture_ids[0]]["predicted_outcome"] == "Away"
+    # The other two from the first call should still be there (we only
+    # edited one fixture, not the whole group).
+    assert by_fix2[fixture_ids[1]]["predicted_outcome"] == "Draw"
+    assert by_fix2[fixture_ids[2]]["predicted_outcome"] == "Away"
+
+
+def test_wc2026_upsert_rejects_fixture_outside_group(app_with_stub_user):
+    app, engine, _user = app_with_stub_user
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_fixtures "
+                "(match_date, kickoff_time, group_name, stage, home_team, away_team, "
+                " venue, status) VALUES "
+                "('2026-06-15', '20:00', 'Group A', 'group', 'Mexico', 'Korea Republic', "
+                " 'Estadio Azteca', 'scheduled'), "
+                "('2026-06-15', '20:00', 'Group B', 'group', 'Canada', 'Switzerland', "
+                " 'BMO Field', 'scheduled')"
+            )
+        )
+        group_b_id = conn.execute(
+            text("SELECT id FROM wc_fixtures WHERE group_name = 'Group B'")
+        ).scalar()
+
+    client = TestClient(app)
+    # Submitting a Group B fixture under the Group A URL must fail.
+    resp = client.put(
+        "/wc2026/predictions/group/Group A",
+        json={"picks": [{"fixture_id": group_b_id, "predicted_outcome": "Home"}]},
+    )
+    assert resp.status_code == 400
+    assert "not part of Group A" in resp.json()["detail"]
+
+
+def test_wc2026_upsert_rejects_kicked_off_fixture(app_with_stub_user):
+    app, engine, _user = app_with_stub_user
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_fixtures "
+                "(match_date, kickoff_time, group_name, stage, home_team, away_team, "
+                " venue, status) VALUES "
+                "('2026-06-12', '15:00', 'Group A', 'group', 'Korea Republic', 'Czechia', "
+                " 'BMO Field', 'completed'), "
+                "('2026-06-15', '20:00', 'Group A', 'group', 'Mexico', 'South Africa', "
+                " 'Estadio Azteca', 'scheduled')"
+            )
+        )
+        rows = conn.execute(
+            text("SELECT id, status FROM wc_fixtures WHERE group_name='Group A' ORDER BY id")
+        ).fetchall()
+    completed_id = next(r[0] for r in rows if r[1] == "completed")
+
+    client = TestClient(app)
+    resp = client.put(
+        "/wc2026/predictions/group/Group A",
+        json={"picks": [{"fixture_id": completed_id, "predicted_outcome": "Home"}]},
+    )
+    assert resp.status_code == 400
+    assert "locked" in resp.json()["detail"].lower()
+
+
+def test_wc2026_upsert_404s_for_empty_group(app_with_stub_user):
+    """No fixtures in the requested group → 404, not a silent no-op."""
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+    resp = client.put(
+        "/wc2026/predictions/group/Group Z",
+        json={"picks": [{"fixture_id": 9999, "predicted_outcome": "Home"}]},
+    )
+    assert resp.status_code == 404
+
+
+def test_wc2026_get_predictions_marks_kicked_off_as_locked(app_with_stub_user):
+    """A user's prediction surfaces `locked: true` once the match starts."""
+    app, engine, _user = app_with_stub_user
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_fixtures "
+                "(match_date, kickoff_time, group_name, stage, home_team, away_team, "
+                " venue, status, home_goals, away_goals) VALUES "
+                "('2026-06-12', '15:00', 'Group A', 'group', 'Korea Republic', 'Czechia', "
+                " 'BMO Field', 'completed', 2, 1)"
+            )
+        )
+        fixture_id = conn.execute(
+            text("SELECT id FROM wc_fixtures WHERE home_team='Korea Republic'")
+        ).scalar()
+        # Bypass the API guard and insert a stored pick directly, simulating
+        # a prediction made before kickoff.
+        conn.execute(
+            text(
+                "INSERT INTO wc_user_predictions (user_id, fixture_id, predicted_outcome) "
+                "VALUES (:uid, :fid, 'Home')"
+            ),
+            {"uid": 42, "fid": fixture_id},
+        )
+
+    client = TestClient(app)
+    resp = client.get("/wc2026/predictions")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["predictions"]) == 1
+    p = body["predictions"][0]
+    assert p["locked"] is True
+    assert p["status"] == "completed"
+    assert p["home_goals"] == 2
+    assert p["away_goals"] == 1
+    assert p["predicted_outcome"] == "Home"
+
+
 def test_unlocks_returns_empty_list_for_user_with_no_unlocks(app_with_stub_user):
     app, _engine, _user = app_with_stub_user
     client = TestClient(app)
