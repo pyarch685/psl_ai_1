@@ -11,6 +11,9 @@ Phase 1 contract (matches `src/wc2026/lib/api.ts`):
 - POST /groups/standings/refresh      auth    (admin allowlist; triggers scraper)
 - GET  /predictions/group/{name}      auth    (FIFA-Elo predictions per group)
 - GET  /wc2026/fixtures               public  (tournament-wide fixtures by day)
+- GET  /wc2026/teams                  public  (48 nations in the WC2026 draw)
+- GET  /wc2026/predictions            auth    (current user's saved picks)
+- PUT  /wc2026/predictions/group/{g}  auth    (bulk upsert per group)
 - POST /payments/paystack/init        auth    (Phase 1 stub — 503)
 - GET  /payments/paystack/verify      auth    (Phase 1 stub — {success: false})
 - GET  /unlocks                       auth    (Phase 1 stub — {unlocks: []})
@@ -97,6 +100,40 @@ class GroupWinnerPrediction(BaseModel):
 class GroupPredictionsResponse(BaseModel):
     matches: List[GroupMatchPrediction]
     winner: Optional[GroupWinnerPrediction] = None
+
+
+class TeamsResponse(BaseModel):
+    teams: List[str]
+
+
+class UserPrediction(BaseModel):
+    """A single saved user prediction joined with its fixture."""
+
+    fixture_id: int
+    group_name: Optional[str] = None
+    match_date: str
+    kickoff_time: Optional[str] = None
+    home_team: str
+    away_team: str
+    status: str
+    home_goals: Optional[int] = None
+    away_goals: Optional[int] = None
+    predicted_outcome: str  # 'Home' / 'Draw' / 'Away'
+    locked: bool  # True once the match has kicked off (uneditable)
+    updated_at: str
+
+
+class UserPredictionsResponse(BaseModel):
+    predictions: List[UserPrediction]
+
+
+class GroupPredictionSubmission(BaseModel):
+    fixture_id: int
+    predicted_outcome: str = Field(..., pattern="^(Home|Draw|Away)$")
+
+
+class GroupPredictionsSubmitRequest(BaseModel):
+    picks: List[GroupPredictionSubmission]
 
 
 class WcFixture(BaseModel):
@@ -401,6 +438,92 @@ def _build_fixtures_response(
     )
 
 
+# ---------- User predictions schema bootstrap --------------------------------
+#
+# `wc_user_predictions` is created by migration 004 in production. Calling
+# this helper at route-registration time guarantees the table exists even
+# on environments (local dev, fresh test DBs, brand-new Railway deploys
+# before the migration is run) that haven't applied it yet. Uses
+# CREATE TABLE IF NOT EXISTS so it's a true no-op when the table is
+# already present.
+
+_USER_PREDICTIONS_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS wc_user_predictions (
+    id {serial} PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    fixture_id INTEGER NOT NULL,
+    predicted_outcome TEXT NOT NULL
+        CHECK (predicted_outcome IN ('Home','Draw','Away')),
+    created_at TIMESTAMP NOT NULL DEFAULT {now}(),
+    updated_at TIMESTAMP NOT NULL DEFAULT {now}(),
+    UNIQUE (user_id, fixture_id)
+);
+"""
+
+
+def _ensure_user_predictions_schema() -> None:
+    """
+    Create wc_user_predictions if it doesn't exist. Idempotent and safe to
+    invoke on every app startup.
+    """
+    engine = get_db_engine()
+    dialect = engine.dialect.name  # 'postgresql' / 'sqlite' in tests
+    serial = "SERIAL" if dialect != "sqlite" else "INTEGER"
+    now_fn = "NOW" if dialect != "sqlite" else "CURRENT_TIMESTAMP"
+    sql = _USER_PREDICTIONS_SCHEMA_SQL.format(serial=serial, now=now_fn)
+    # SQLite's `CURRENT_TIMESTAMP` is a reserved keyword, not a callable,
+    # so strip the parentheses on that dialect to keep the DDL portable.
+    if dialect == "sqlite":
+        sql = sql.replace("CURRENT_TIMESTAMP()", "CURRENT_TIMESTAMP")
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(sql))
+    except Exception as exc:
+        logger.warning(
+            f"[wc2026] Could not ensure wc_user_predictions schema: {exc}"
+        )
+
+
+def _fixture_has_kicked_off(fixture: Dict[str, Any]) -> bool:
+    """
+    A fixture is considered locked (no further predictions) as soon as it's
+    live or completed. We deliberately don't compare wall-clock kickoff
+    times against `now()` — the source of truth is the scraper's `status`
+    column, so users get a few extra minutes of grace if FIFA hasn't yet
+    flipped the row to `live`.
+    """
+    return (fixture.get("status") or "scheduled") in ("live", "completed")
+
+
+def _load_user_predictions(user_id: int) -> List[Dict[str, Any]]:
+    """
+    Return the user's saved predictions joined with the fixture they
+    reference, ordered chronologically.
+    """
+    engine = get_db_engine()
+    out: List[Dict[str, Any]] = []
+    with engine.connect() as conn:
+        result = conn.execute(
+            text(
+                """
+                SELECT
+                    p.fixture_id, p.predicted_outcome, p.updated_at,
+                    f.group_name, f.match_date, f.kickoff_time,
+                    f.home_team, f.away_team, f.status,
+                    f.home_goals, f.away_goals
+                FROM wc_user_predictions p
+                JOIN wc_fixtures f ON f.id = p.fixture_id
+                WHERE p.user_id = :uid
+                ORDER BY f.match_date, f.kickoff_time NULLS LAST, f.id
+                """
+            ),
+            {"uid": user_id},
+        )
+        for row in result.mappings():
+            out.append(dict(row))
+    return out
+
+
 def _load_group_fixtures(group_name: str) -> List[Dict[str, Any]]:
     """
     Load WC fixtures for a given group ordered by date.
@@ -509,6 +632,12 @@ def register_wc2026_routes(
         def _wc_predict_limit(fn):  # type: ignore[misc]
             return fn
 
+    # Make sure the per-user predictions table exists. This is the same
+    # DDL as migration 004 and is safe to run on every startup; it lets
+    # fresh Railway deploys serve PUT /wc2026/predictions immediately
+    # without an out-of-band migration step.
+    _ensure_user_predictions_schema()
+
     @app.get("/groups/standings", response_model=GroupStandingsResponse)
     async def get_groups_standings() -> GroupStandingsResponse:
         try:
@@ -603,6 +732,178 @@ def register_wc2026_routes(
                 status_code=500,
                 detail="Failed to load WC2026 fixtures.",
             )
+
+    @app.get("/wc2026/teams", response_model=TeamsResponse)
+    async def get_wc2026_teams() -> TeamsResponse:
+        """
+        Return the 48 nations in the WC2026 draw, alphabetically sorted.
+
+        Public — used by the /wc2026 Predict tab to populate the home/away
+        dropdowns with national teams instead of PSL clubs.
+        """
+        teams = sorted({t for teams in STATIC_GROUPS.values() for t in teams})
+        return TeamsResponse(teams=teams)
+
+    @app.get("/wc2026/predictions", response_model=UserPredictionsResponse)
+    async def get_wc2026_user_predictions(
+        current_user: Dict[str, Any] = Depends(get_current_user),
+    ) -> UserPredictionsResponse:
+        """Return all WC2026 picks the current user has saved."""
+        try:
+            rows = _load_user_predictions(int(current_user["user_id"]))
+        except Exception as exc:
+            logger.error(
+                f"[wc2026] /wc2026/predictions failed: {exc}", exc_info=True,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to load your saved predictions.",
+            )
+
+        predictions = [
+            UserPrediction(
+                fixture_id=int(r["fixture_id"]),
+                group_name=r.get("group_name") or None,
+                match_date=str(r["match_date"])[:10],
+                kickoff_time=r.get("kickoff_time") or None,
+                home_team=r["home_team"],
+                away_team=r["away_team"],
+                status=r.get("status") or "scheduled",
+                home_goals=(
+                    int(r["home_goals"])
+                    if r.get("home_goals") is not None
+                    and r.get("status") in ("live", "completed")
+                    else None
+                ),
+                away_goals=(
+                    int(r["away_goals"])
+                    if r.get("away_goals") is not None
+                    and r.get("status") in ("live", "completed")
+                    else None
+                ),
+                predicted_outcome=r["predicted_outcome"],
+                locked=_fixture_has_kicked_off(r),
+                updated_at=_format_iso(r.get("updated_at")),
+            )
+            for r in rows
+        ]
+        return UserPredictionsResponse(predictions=predictions)
+
+    @app.put(
+        "/wc2026/predictions/group/{group_name}",
+        response_model=UserPredictionsResponse,
+    )
+    async def upsert_wc2026_group_predictions(
+        group_name: str,
+        payload: GroupPredictionsSubmitRequest,
+        current_user: Dict[str, Any] = Depends(get_current_user),
+    ) -> UserPredictionsResponse:
+        """
+        Bulk-upsert the user's picks for a single WC2026 group.
+
+        Each pick must reference a `fixture_id` that:
+          * exists in `wc_fixtures`,
+          * belongs to the requested `group_name`,
+          * has not yet kicked off (i.e. `status == 'scheduled'`).
+
+        The endpoint is all-or-nothing: if any pick fails validation the
+        whole request 400s without persisting partial state. Editing
+        previously-saved picks is allowed (the upsert simply rewrites the
+        `predicted_outcome`); picks for matches that have already started
+        are immutable and surfaced via the `locked` field in the response.
+        """
+        if not payload.picks:
+            raise HTTPException(
+                status_code=400, detail="At least one pick is required.",
+            )
+
+        user_id = int(current_user["user_id"])
+
+        # Load this group's fixtures once and index by id so validation is
+        # O(picks) rather than O(picks * fixtures).
+        group_fixtures = _load_group_fixtures(group_name)
+        by_id = {int(f["id"]): f for f in group_fixtures}
+        if not by_id:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No fixtures found for {group_name!r}.",
+            )
+
+        # Validate every pick before writing anything.
+        errors: List[str] = []
+        seen_fixture_ids: set[int] = set()
+        for pick in payload.picks:
+            if pick.fixture_id in seen_fixture_ids:
+                errors.append(
+                    f"Fixture {pick.fixture_id} appears more than once in the request."
+                )
+                continue
+            seen_fixture_ids.add(pick.fixture_id)
+
+            fixture = by_id.get(pick.fixture_id)
+            if fixture is None:
+                errors.append(
+                    f"Fixture {pick.fixture_id} is not part of {group_name}."
+                )
+                continue
+            if _fixture_has_kicked_off(fixture):
+                errors.append(
+                    f"{fixture['home_team']} vs {fixture['away_team']} "
+                    f"has already kicked off — predictions are locked."
+                )
+
+        if errors:
+            raise HTTPException(status_code=400, detail="; ".join(errors))
+
+        engine = get_db_engine()
+        # We use INSERT … ON CONFLICT for Postgres but fall back to a
+        # DELETE-then-INSERT on SQLite (used by tests) which doesn't honour
+        # the same upsert grammar reliably across versions.
+        dialect = engine.dialect.name
+        with engine.begin() as conn:
+            for pick in payload.picks:
+                if dialect == "sqlite":
+                    conn.execute(
+                        text(
+                            "DELETE FROM wc_user_predictions "
+                            "WHERE user_id = :uid AND fixture_id = :fid"
+                        ),
+                        {"uid": user_id, "fid": pick.fixture_id},
+                    )
+                    conn.execute(
+                        text(
+                            "INSERT INTO wc_user_predictions "
+                            "(user_id, fixture_id, predicted_outcome) "
+                            "VALUES (:uid, :fid, :outcome)"
+                        ),
+                        {
+                            "uid": user_id,
+                            "fid": pick.fixture_id,
+                            "outcome": pick.predicted_outcome,
+                        },
+                    )
+                else:
+                    conn.execute(
+                        text(
+                            """
+                            INSERT INTO wc_user_predictions
+                                (user_id, fixture_id, predicted_outcome)
+                            VALUES (:uid, :fid, :outcome)
+                            ON CONFLICT (user_id, fixture_id) DO UPDATE SET
+                                predicted_outcome = EXCLUDED.predicted_outcome,
+                                updated_at = NOW()
+                            """
+                        ),
+                        {
+                            "uid": user_id,
+                            "fid": pick.fixture_id,
+                            "outcome": pick.predicted_outcome,
+                        },
+                    )
+
+        # Round-trip: re-read so the response reflects the persisted state
+        # (handy for the frontend to refresh its local copy in one call).
+        return await get_wc2026_user_predictions(current_user)  # type: ignore[arg-type]
 
     @app.get(
         "/predictions/group/{group_name}",
