@@ -200,11 +200,52 @@ def test_predictions_group_returns_matches_with_predictions(app_with_stub_user):
     assert {"home_win", "draw", "away_win", "predicted", "confidence"} <= pred.keys()
     # Mexico is favoured over Korea Republic per FIFA ranks.
     assert pred["home_win"] > pred["away_win"]
+    # Scheduled fixtures must not leak goals — the wc_fixtures rows above
+    # use the schema default status ('scheduled'), so the endpoint should
+    # echo nulls for both score fields and 'scheduled' for status.
+    assert first["status"] == "scheduled"
+    assert first["home_goals"] is None
+    assert first["away_goals"] is None
 
     winner = data["winner"]
     assert winner is not None
     assert winner["team"] in {"Mexico", "Korea Republic", "Czechia", "South Africa"}
     assert 0.0 < winner["probability"] <= 1.0
+
+
+def test_predictions_group_exposes_scores_for_completed_matches(app_with_stub_user):
+    """Completed matches should surface their final scoreline."""
+    app, engine, _user = app_with_stub_user
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_fixtures "
+                "(match_date, kickoff_time, group_name, stage, home_team, away_team, "
+                " venue, home_goals, away_goals, status) "
+                "VALUES "
+                "('2026-06-11', '20:00', 'Group A', 'group', 'Mexico', 'South Africa', "
+                " 'Estadio Azteca', 2, 0, 'completed'), "
+                "('2026-06-12', '15:00', 'Group A', 'group', 'Korea Republic', 'Czechia', "
+                " 'BMO Field', 2, 1, 'completed')"
+            )
+        )
+
+    client = TestClient(app)
+    resp = client.get("/predictions/group/Group A")
+    assert resp.status_code == 200
+    matches = resp.json()["matches"]
+    assert len(matches) == 2
+
+    by_pair = {(m["home_team"], m["away_team"]): m for m in matches}
+    mex = by_pair[("Mexico", "South Africa")]
+    assert mex["status"] == "completed"
+    assert mex["home_goals"] == 2
+    assert mex["away_goals"] == 0
+
+    kor = by_pair[("Korea Republic", "Czechia")]
+    assert kor["status"] == "completed"
+    assert kor["home_goals"] == 2
+    assert kor["away_goals"] == 1
 
 
 def test_unlocks_returns_empty_list_for_user_with_no_unlocks(app_with_stub_user):
