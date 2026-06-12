@@ -305,7 +305,7 @@ def test_wc2026_predict_returns_valid_envelope(app_with_stub_user):
     assert body["predicted_outcome"] == "Home"
     assert body["probabilities"]["Home"] > body["probabilities"]["Away"]
     assert body["confidence"] == body["probabilities"]["Home"]
-    assert body["model_version"] == "fifa_elo_v1"
+    assert body["model_version"] == "wc2026_davidson_bt_v1"
 
 
 def test_wc2026_predict_resolves_aliases(app_with_stub_user):

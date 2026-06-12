@@ -1477,11 +1477,12 @@ async def forgot_password(request: ForgotPasswordRequest) -> ForgotPasswordRespo
         # Generate secure token
         reset_token = generate_secure_token()
         token_hash = hash_token(reset_token)
-        
-        # Set expiration (1 hour from now)
-        expires_at = datetime.utcnow() + timedelta(hours=1)
-        
-        # Store token in database
+
+        # Store token in database. The password_reset_tokens columns are
+        # `timestamp without time zone`, so we let PostgreSQL compute the
+        # expiration via `NOW() + interval` to keep all comparisons in the
+        # database server's clock and avoid a UTC/local-time mismatch that
+        # would make freshly-issued tokens appear already expired.
         with engine.begin() as conn:
             # Invalidate any existing unused tokens for this user
             invalidate_tokens = text("""
@@ -1490,16 +1491,15 @@ async def forgot_password(request: ForgotPasswordRequest) -> ForgotPasswordRespo
                 WHERE user_id = :user_id AND used_at IS NULL
             """)
             conn.execute(invalidate_tokens, {"user_id": user_id})
-            
-            # Insert new token
+
+            # Insert new token with expiry computed server-side
             insert_token = text("""
                 INSERT INTO password_reset_tokens (user_id, token, expires_at)
-                VALUES (:user_id, :token, :expires_at)
+                VALUES (:user_id, :token, NOW() + INTERVAL '1 hour')
             """)
             conn.execute(insert_token, {
                 "user_id": user_id,
                 "token": token_hash,
-                "expires_at": expires_at
             })
         
         # Get reset URL from environment or use default

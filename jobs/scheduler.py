@@ -291,8 +291,13 @@ def start_scheduler() -> None:
             logger.warning(f"[scheduler] Startup WC2026 groups scrape failed: {e}")
             print(f"[scheduler] Startup WC2026 groups scrape failed: {e}")
 
+    # APScheduler's `BackgroundScheduler` doesn't expose its executor pool as
+    # a public `.executors` attribute, so run the startup scrape on a plain
+    # daemon thread. This still runs out-of-band from the web server and any
+    # exceptions are swallowed inside `_run_on_startup`.
     try:
-        _scheduler.executors["default"].submit(_run_on_startup)
+        import threading
+        threading.Thread(target=_run_on_startup, daemon=True, name="startup-scrape").start()
     except Exception as e:
         logger.warning(f"[scheduler] Could not submit startup scrape: {e}")
 

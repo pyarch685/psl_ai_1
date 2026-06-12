@@ -1,21 +1,27 @@
 """
 FIFA World Cup 2026 scraper.
 
-Phase 1 ships `scrape_groups()` only — it best-effort scrapes the public FIFA
-groups page and upserts rows into `group_standings`. The frontend renders the
-seeded static draw as a fallback when the scraper has no fresh data, so this
-scraper is allowed to fail gracefully.
+Pulls match data from FIFA's undocumented JSON API (the same backend used by
+fifa.com's mobile and web apps) and computes group standings locally. We
+previously scraped the public groups page, but that page is rendered
+client-side by React and returns ~5KB of empty shell HTML to non-browser
+clients — the parser had no chance.
+
+Standings columns are derived from completed matches (MatchStatus == 0).
+The function is intentionally defensive: any error along the way is logged
+and swallowed so a transient FIFA outage cannot crash the scheduler.
 
 This file MUST NOT import FastAPI or ML code.
 """
 from __future__ import annotations
 
 import logging
-import re
+import os
+import unicodedata
+from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
 import requests
-from bs4 import BeautifulSoup
 from sqlalchemy import text
 
 from db.engine import get_db_engine
@@ -24,154 +30,187 @@ from db.seed_wc2026 import GROUPS as STATIC_GROUPS
 logger = logging.getLogger(__name__)
 
 
-GROUPS_URL = (
-    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/groups"
-)
+# FIFA's undocumented mobile/web JSON API. IDs are stable across the
+# tournament; they were sourced by querying the calendar endpoint for the
+# tournament start date and matching the competition name.
+FIFA_API_BASE = os.getenv("FIFA_API_BASE", "https://api.fifa.com/api/v3")
+WC2026_COMPETITION_ID = os.getenv("WC2026_COMPETITION_ID", "17")
+WC2026_SEASON_ID = os.getenv("WC2026_SEASON_ID", "285023")
 
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
     ),
+    "Accept": "application/json",
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-REQUEST_TIMEOUT_S = 20
+REQUEST_TIMEOUT_S = 30
+
+# FIFA MatchStatus values we treat as "completed full-time / official result".
+# Empirically 0 has meant FT in past tournaments and currently still does.
+COMPLETED_STATUSES = {0}
 
 
-# Canonical team-name set drawn from the seeded draw. Used to recognize team
-# strings on the FIFA page even if they appear with extra markup nearby.
-_CANONICAL_TEAMS = {
-    team for teams in STATIC_GROUPS.values() for team in teams
+# Aliases for the small number of teams FIFA spells differently from our
+# canonical seed (the seed is the source of truth used by the frontend).
+_FIFA_TO_CANONICAL: Dict[str, str] = {
+    # Accented vs ASCII
+    "Curaçao": "Curacao",
 }
 
+_CANONICAL_TEAMS = {team for teams in STATIC_GROUPS.values() for team in teams}
 
-def _normalize_team(raw: str) -> Optional[str]:
-    """
-    Map a scraped team string back to its canonical seed name.
 
-    Returns None if the string isn't recognizable as a WC2026 participant.
+def _strip_accents(value: str) -> str:
+    return "".join(
+        ch for ch in unicodedata.normalize("NFD", value)
+        if unicodedata.category(ch) != "Mn"
+    )
+
+
+def _localize(field: Any) -> Optional[str]:
+    """Pull the English description out of FIFA's localized-string field."""
+    if isinstance(field, list) and field:
+        head = field[0]
+        if isinstance(head, dict):
+            return head.get("Description")
+    if isinstance(field, str):
+        return field
+    return None
+
+
+def _to_canonical_team(fifa_name: Optional[str]) -> Optional[str]:
     """
-    if not raw:
+    Map a FIFA team name onto the canonical seed name. Returns None if the
+    team isn't a recognized WC2026 participant (defensive — protects against
+    typo regressions on FIFA's side).
+    """
+    if not fifa_name:
         return None
-    cleaned = re.sub(r"\s+", " ", raw).strip()
-    if not cleaned:
+    name = fifa_name.strip()
+    if not name:
         return None
-    # Direct hit.
-    if cleaned in _CANONICAL_TEAMS:
-        return cleaned
-    # Case-insensitive hit.
-    lower = cleaned.lower()
+    if name in _FIFA_TO_CANONICAL:
+        return _FIFA_TO_CANONICAL[name]
+    if name in _CANONICAL_TEAMS:
+        return name
+    # Accent-insensitive fallback in case FIFA introduces new diacritics.
+    stripped = _strip_accents(name).lower()
     for canonical in _CANONICAL_TEAMS:
-        if canonical.lower() == lower:
-            return canonical
-    # Contains hit (e.g. "Korea Republic 2-1" — pick the team prefix).
-    for canonical in _CANONICAL_TEAMS:
-        if canonical.lower() in lower:
+        if _strip_accents(canonical).lower() == stripped:
             return canonical
     return None
 
 
-def _fetch_groups_html() -> str:
+def _fetch_wc_matches() -> List[Dict[str, Any]]:
     """
-    Fetch the FIFA groups page HTML.
+    Fetch all WC2026 matches from FIFA's calendar API.
 
     Raises:
         requests.RequestException on transport errors / non-2xx responses.
     """
-    response = requests.get(GROUPS_URL, headers=HEADERS, timeout=REQUEST_TIMEOUT_S)
+    url = (
+        f"{FIFA_API_BASE}/calendar/matches"
+        f"?language=en&count=500"
+        f"&idCompetition={WC2026_COMPETITION_ID}"
+        f"&idSeason={WC2026_SEASON_ID}"
+    )
+    response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT_S)
     response.raise_for_status()
-    return response.text
+    data = response.json()
+    results = data.get("Results") if isinstance(data, dict) else None
+    return results or []
 
 
-def _parse_groups(html: str) -> Dict[str, List[Dict[str, Any]]]:
+def _compute_standings(matches: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
     """
-    Best-effort parser for the FIFA groups page.
+    Reduce a list of FIFA match dicts to per-group standings rows.
 
-    FIFA's site is client-rendered React in places; this parser walks the
-    page tokens and recognizes "Group X" headers followed by sequences of
-    canonical team names with optional numeric stats. It is intentionally
-    defensive — when in doubt it falls back to seeded stats (zeros) so the
-    scheduler can never accidentally wipe live data with junk.
-
-    Returns:
-        Mapping from "Group A" .. "Group L" to a list of dicts with the
-        team name and stat columns (played/won/drawn/lost/gf/ga/points/rank).
-        Groups not detected are simply omitted.
+    Only matches with ``MatchStatus`` in :data:`COMPLETED_STATUSES` contribute
+    to the stats. Groups that have no completed matches yet are still emitted
+    with the seeded teams at zero so the upsert keeps draw rows fresh.
     """
-    soup = BeautifulSoup(html, "html.parser")
-    tokens = [t.strip() for t in soup.stripped_strings if t.strip()]
+    # Initialize every seeded team at zero so the table is always complete.
+    table: Dict[str, Dict[str, Dict[str, int]]] = {
+        group: {
+            team: {
+                "played": 0, "won": 0, "drawn": 0, "lost": 0,
+                "goals_for": 0, "goals_against": 0, "points": 0,
+            }
+            for team in teams
+        }
+        for group, teams in STATIC_GROUPS.items()
+    }
 
-    groups: Dict[str, List[Dict[str, Any]]] = {}
-    current_group: Optional[str] = None
-    current_teams_seen: set[str] = set()
-
-    group_header_re = re.compile(r"^Group\s+([A-L])$", re.IGNORECASE)
-
-    i = 0
-    while i < len(tokens):
-        tok = tokens[i]
-
-        m = group_header_re.match(tok)
-        if m:
-            current_group = f"Group {m.group(1).upper()}"
-            groups.setdefault(current_group, [])
-            current_teams_seen = set()
-            i += 1
+    for match in matches:
+        group_name = _localize(match.get("GroupName"))
+        if not group_name or not group_name.startswith("Group "):
+            continue
+        if group_name not in table:
+            continue
+        if match.get("MatchStatus") not in COMPLETED_STATUSES:
             continue
 
-        if current_group is not None:
-            canonical = _normalize_team(tok)
-            if canonical and canonical in STATIC_GROUPS.get(current_group, []):
-                # Skip duplicates within a group (e.g. crest alt-text).
-                if canonical in current_teams_seen:
-                    i += 1
-                    continue
-                # Look ahead for up to 7 integers (played, won, drawn, lost,
-                # gf, ga, points). FIFA may print these as separate tokens.
-                stats: List[int] = []
-                j = i + 1
-                while j < len(tokens) and len(stats) < 7:
-                    nxt = tokens[j]
-                    if nxt.lstrip("+-").isdigit():
-                        stats.append(int(nxt))
-                        j += 1
-                        continue
-                    break
+        home_raw = _localize((match.get("Home") or {}).get("TeamName"))
+        away_raw = _localize((match.get("Away") or {}).get("TeamName"))
+        home = _to_canonical_team(home_raw)
+        away = _to_canonical_team(away_raw)
+        if not home or not away:
+            logger.warning(
+                f"[fifa] Skipping match with unrecognized teams: "
+                f"home={home_raw!r} away={away_raw!r} group={group_name!r}"
+            )
+            continue
+        if home not in table[group_name] or away not in table[group_name]:
+            continue
 
-                team_payload: Dict[str, Any] = {"team": canonical}
-                if len(stats) >= 7:
-                    (played, won, drawn, lost, gf, ga, points) = stats[:7]
-                    team_payload.update(
-                        {
-                            "played": played,
-                            "won": won,
-                            "drawn": drawn,
-                            "lost": lost,
-                            "goals_for": gf,
-                            "goals_against": ga,
-                            "points": points,
-                        }
-                    )
-                groups[current_group].append(team_payload)
-                current_teams_seen.add(canonical)
-                # Stop collecting once we've seen all four expected teams.
-                if len(current_teams_seen) == 4:
-                    current_group = None
-                i = j if j > i else i + 1
-                continue
+        try:
+            home_score = int(match.get("HomeTeamScore"))
+            away_score = int(match.get("AwayTeamScore"))
+        except (TypeError, ValueError):
+            continue
 
-        i += 1
+        th = table[group_name][home]
+        ta = table[group_name][away]
+        th["played"] += 1
+        ta["played"] += 1
+        th["goals_for"] += home_score
+        th["goals_against"] += away_score
+        ta["goals_for"] += away_score
+        ta["goals_against"] += home_score
+        if home_score > away_score:
+            th["won"] += 1
+            ta["lost"] += 1
+            th["points"] += 3
+        elif home_score < away_score:
+            ta["won"] += 1
+            th["lost"] += 1
+            ta["points"] += 3
+        else:
+            th["drawn"] += 1
+            ta["drawn"] += 1
+            th["points"] += 1
+            ta["points"] += 1
 
-    return groups
+    output: Dict[str, List[Dict[str, Any]]] = {}
+    for group_name, teams in table.items():
+        rows: List[Dict[str, Any]] = []
+        for team, stats in teams.items():
+            row: Dict[str, Any] = {"team": team}
+            row.update(stats)
+            rows.append(row)
+        output[group_name] = rows
+    return output
 
 
 def _upsert_group_standings(groups: Dict[str, List[Dict[str, Any]]]) -> int:
     """
     Upsert parsed group standings into PostgreSQL.
 
-    Only updates the stats columns for rows that already exist (the seeded
-    draw). Returns the number of rows upserted.
+    Ranks rows within each group by points, then goal difference, then goals
+    for. Returns the number of rows upserted.
     """
     if not groups:
         return 0
@@ -202,7 +241,6 @@ def _upsert_group_standings(groups: Dict[str, List[Dict[str, Any]]]) -> int:
     affected = 0
     with engine.begin() as conn:
         for group_name, rows in groups.items():
-            # Compute rank within each group using points then GD then GF.
             ranked = sorted(
                 rows,
                 key=lambda r: (
@@ -211,6 +249,7 @@ def _upsert_group_standings(groups: Dict[str, List[Dict[str, Any]]]) -> int:
                     -int(r.get("goals_for", 0)),
                 ),
             )
+            any_played = any(r.get("played", 0) for r in ranked)
             for idx, row in enumerate(ranked, start=1):
                 conn.execute(
                     upsert_sql,
@@ -224,7 +263,11 @@ def _upsert_group_standings(groups: Dict[str, List[Dict[str, Any]]]) -> int:
                         "goals_for": int(row.get("goals_for", 0)),
                         "goals_against": int(row.get("goals_against", 0)),
                         "points": int(row.get("points", 0)),
-                        "rank": idx if "points" in row else None,
+                        # Only populate rank once at least one match in the
+                        # group has been played, so untouched groups keep
+                        # NULL rank and the frontend can still order
+                        # alphabetically or via the seeded draw.
+                        "rank": idx if any_played else None,
                     },
                 )
                 affected += 1
@@ -233,36 +276,46 @@ def _upsert_group_standings(groups: Dict[str, List[Dict[str, Any]]]) -> int:
 
 def scrape_groups() -> int:
     """
-    Fetch the FIFA groups page, parse standings, and upsert them.
+    Fetch WC2026 matches from FIFA, compute group standings, and upsert them.
 
-    Phase 1 entry point for the scheduler. Returns the number of rows
-    upserted; logs and swallows errors so a transient FIFA outage cannot
-    crash the scheduler. Returns 0 on failure.
+    Returns the number of rows upserted; logs and swallows errors so a
+    transient FIFA outage cannot crash the scheduler. Returns 0 on failure.
     """
     try:
-        html = _fetch_groups_html()
+        matches = _fetch_wc_matches()
     except Exception as exc:
-        logger.warning(f"[fifa] Failed to fetch groups page: {exc}")
+        logger.warning(f"[fifa] Failed to fetch WC2026 matches: {exc}")
+        return 0
+
+    if not matches:
+        logger.info("[fifa] No matches returned from FIFA API.")
         return 0
 
     try:
-        parsed = _parse_groups(html)
+        standings = _compute_standings(matches)
     except Exception as exc:
-        logger.error(f"[fifa] Failed to parse groups page: {exc}", exc_info=True)
-        return 0
-
-    if not parsed:
-        logger.info("[fifa] No groups parsed (page structure changed or pre-tournament).")
+        logger.error(f"[fifa] Failed to compute standings: {exc}", exc_info=True)
         return 0
 
     try:
-        affected = _upsert_group_standings(parsed)
+        affected = _upsert_group_standings(standings)
     except Exception as exc:
         logger.error(f"[fifa] Failed to upsert standings: {exc}", exc_info=True)
         return 0
 
-    logger.info(f"[fifa] ✓ Upserted {affected} group_standings rows")
-    print(f"[fifa] ✓ Upserted {affected} group_standings rows")
+    played_total = sum(
+        row.get("played", 0)
+        for rows in standings.values()
+        for row in rows
+    )
+    logger.info(
+        f"[fifa] ✓ Upserted {affected} group_standings rows "
+        f"({played_total // 2} matches counted)"
+    )
+    print(
+        f"[fifa] ✓ Upserted {affected} group_standings rows "
+        f"({played_total // 2} matches counted)"
+    )
     return affected
 
 
