@@ -10,6 +10,7 @@ Phase 1 contract (matches `src/wc2026/lib/api.ts`):
 - GET  /groups/standings              public  (live standings + draw fallback)
 - POST /groups/standings/refresh      auth    (admin allowlist; triggers scraper)
 - GET  /predictions/group/{name}      auth    (FIFA-Elo predictions per group)
+- GET  /wc2026/fixtures               public  (tournament-wide fixtures by day)
 - POST /payments/paystack/init        auth    (Phase 1 stub — 503)
 - GET  /payments/paystack/verify      auth    (Phase 1 stub — {success: false})
 - GET  /unlocks                       auth    (Phase 1 stub — {unlocks: []})
@@ -18,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime
+from datetime import date as _date, datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
@@ -96,6 +97,30 @@ class GroupWinnerPrediction(BaseModel):
 class GroupPredictionsResponse(BaseModel):
     matches: List[GroupMatchPrediction]
     winner: Optional[GroupWinnerPrediction] = None
+
+
+class WcFixture(BaseModel):
+    """A single WC2026 fixture row enriched with a model prediction."""
+
+    id: int
+    match_date: str
+    kickoff_time: Optional[str] = None
+    group_name: Optional[str] = None
+    stage: str
+    home_team: str
+    away_team: str
+    venue: Optional[str] = None
+    status: str
+    home_goals: Optional[int] = None
+    away_goals: Optional[int] = None
+    prediction: Optional[Dict[str, Any]] = None
+
+
+class WcFixturesResponse(BaseModel):
+    fixtures: List[WcFixture]
+    date_from: str
+    date_to: str
+    count: int
 
 
 class PaystackInitRequest(BaseModel):
@@ -282,6 +307,100 @@ def _build_groups_response() -> GroupStandingsResponse:
     )
 
 
+def _load_fixtures_window(date_from: _date, date_to: _date) -> List[Dict[str, Any]]:
+    """
+    Load wc_fixtures rows whose match_date falls in the inclusive
+    [date_from, date_to] window, ordered chronologically and then by id so
+    multi-match days have a stable order.
+    """
+    engine = get_db_engine()
+    out: List[Dict[str, Any]] = []
+    with engine.connect() as conn:
+        result = conn.execute(
+            text(
+                """
+                SELECT id, match_date, kickoff_time, group_name, stage,
+                       home_team, away_team, venue, status,
+                       home_goals, away_goals
+                FROM wc_fixtures
+                WHERE match_date >= :date_from AND match_date <= :date_to
+                ORDER BY match_date, kickoff_time NULLS LAST, id
+                """
+            ),
+            {"date_from": date_from, "date_to": date_to},
+        )
+        for row in result.mappings():
+            out.append(dict(row))
+    return out
+
+
+def _build_fixtures_response(
+    date_from: _date,
+    date_to: _date,
+) -> WcFixturesResponse:
+    """
+    Build the /wc2026/fixtures payload for the given inclusive date window.
+    Predictions are attached only for teams the FIFA-Elo model recognizes
+    so unrecognized knockout-placeholder slots (e.g. "Winner Group A")
+    silently fall back to `prediction=None` instead of HTTP-500-ing.
+    """
+    rows = _load_fixtures_window(date_from, date_to)
+
+    fixtures: List[WcFixture] = []
+    for r in rows:
+        status_raw = r.get("status") or "scheduled"
+        # Only expose scores once the match is live or completed — see
+        # the matching guard in _build_group_predictions.
+        home_goals = r.get("home_goals") if status_raw in ("completed", "live") else None
+        away_goals = r.get("away_goals") if status_raw in ("completed", "live") else None
+
+        prediction: Optional[Dict[str, Any]] = None
+        home_team = r["home_team"]
+        away_team = r["away_team"]
+        if has_rank(home_team) and has_rank(away_team):
+            try:
+                probs = wc2026_prediction.predict(home_team, away_team)
+                outcome = wc2026_prediction.outcome_from_probs(probs)
+                prediction = {
+                    "home_win": probs["Home"],
+                    "draw": probs["Draw"],
+                    "away_win": probs["Away"],
+                    "predicted": _outcome_display(outcome),
+                    "confidence": _confidence_label(probs[outcome]),
+                }
+            except Exception as exc:
+                # Predictions are non-essential here — log and serve the
+                # fixture without a model overlay rather than failing the
+                # whole tab.
+                logger.warning(
+                    f"[wc2026] prediction failed for {home_team} vs {away_team}: {exc}"
+                )
+
+        fixtures.append(
+            WcFixture(
+                id=int(r["id"]),
+                match_date=str(r["match_date"])[:10],
+                kickoff_time=r.get("kickoff_time") or None,
+                group_name=r.get("group_name") or None,
+                stage=r.get("stage") or "group",
+                home_team=home_team,
+                away_team=away_team,
+                venue=r.get("venue") or None,
+                status=status_raw,
+                home_goals=int(home_goals) if home_goals is not None else None,
+                away_goals=int(away_goals) if away_goals is not None else None,
+                prediction=prediction,
+            )
+        )
+
+    return WcFixturesResponse(
+        fixtures=fixtures,
+        date_from=date_from.isoformat(),
+        date_to=date_to.isoformat(),
+        count=len(fixtures),
+    )
+
+
 def _load_group_fixtures(group_name: str) -> List[Dict[str, Any]]:
     """
     Load WC fixtures for a given group ordered by date.
@@ -425,6 +544,65 @@ def register_wc2026_routes(
             message="Group standings refresh triggered.",
             updated_at=_format_iso(latest),
         )
+
+    @app.get("/wc2026/fixtures", response_model=WcFixturesResponse)
+    async def get_wc2026_fixtures(
+        date: Optional[str] = Query(
+            None,
+            description="YYYY-MM-DD — return only fixtures on this exact date.",
+            pattern=r"^\d{4}-\d{2}-\d{2}$",
+        ),
+        days: int = Query(
+            7,
+            ge=1,
+            le=60,
+            description=(
+                "Inclusive day window from today (ignored when `date` is set). "
+                "Defaults to 7 so the Fixtures tab shows roughly a week of matches."
+            ),
+        ),
+    ) -> WcFixturesResponse:
+        """
+        Return WC2026 fixtures for a daily / windowed view.
+
+        Public on purpose — fixture lists are not the model output we gate;
+        the pre-match probability triplet is included as a convenience for
+        the front-page Fixtures tab, but the schedule itself is published
+        information.
+
+        Two modes:
+          * `?date=YYYY-MM-DD`  -> matches on that exact date.
+          * default              -> today through today+`days` (inclusive).
+        """
+        try:
+            if date is not None:
+                try:
+                    target = _date.fromisoformat(date)
+                except ValueError:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="`date` must be a valid YYYY-MM-DD string.",
+                    )
+                date_from = target
+                date_to = target
+            else:
+                date_from = _date.today()
+                # `days=7` => today + 6 future days (an inclusive window of 7
+                # calendar days), matching the natural "next week" intuition.
+                date_to = date_from + timedelta(days=max(days - 1, 0))
+
+            return _build_fixtures_response(date_from, date_to)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.error(
+                f"[wc2026] /wc2026/fixtures failed: {exc}",
+                exc_info=True,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to load WC2026 fixtures.",
+            )
 
     @app.get(
         "/predictions/group/{group_name}",
