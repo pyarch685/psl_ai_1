@@ -2,14 +2,17 @@
 FIFA World Cup 2026 scraper.
 
 Pulls match data from FIFA's undocumented JSON API (the same backend used by
-fifa.com's mobile and web apps) and computes group standings locally. We
-previously scraped the public groups page, but that page is rendered
+fifa.com's mobile and web apps) and:
+
+- computes group standings from completed matches (``scrape_groups``)
+- persists group-stage fixtures into ``wc_fixtures`` (``scrape_wc_fixtures``)
+
+We previously scraped the public groups page, but that page is rendered
 client-side by React and returns ~5KB of empty shell HTML to non-browser
 clients — the parser had no chance.
 
-Standings columns are derived from completed matches (MatchStatus == 0).
-The function is intentionally defensive: any error along the way is logged
-and swallowed so a transient FIFA outage cannot crash the scheduler.
+Both functions are intentionally defensive: any error is logged and
+swallowed so a transient FIFA outage cannot crash the scheduler.
 
 This file MUST NOT import FastAPI or ML code.
 """
@@ -18,7 +21,7 @@ from __future__ import annotations
 import logging
 import os
 import unicodedata
-from collections import defaultdict
+from datetime import date as _date, datetime
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -319,9 +322,175 @@ def scrape_groups() -> int:
     return affected
 
 
+# ---------------------------------------------------------------------------
+# WC2026 FIXTURES
+# ---------------------------------------------------------------------------
+
+# Mapping from FIFA MatchStatus to our wc_fixtures.status CHECK values.
+# Empirically: 0=full-time, 1=scheduled, 3=live. Anything else gets mapped to
+# 'scheduled' so we never crash on a new FIFA status code, but it does mean
+# postponements/cancellations would need explicit mapping if they ever appear.
+_FIFA_MATCH_STATUS_TO_STATUS: Dict[int, str] = {
+    0: "completed",
+    1: "scheduled",
+    3: "live",
+}
+
+# Stage mapping. Only "First Stage" (group) is ingested for now; knockout
+# rounds reference placeholder slots ("Winner Group A", "2A", etc.) until the
+# group stage finishes, and the schema CHECK constraint doesn't include
+# 'round_of_16'. They can be added in a follow-up once the bracket is set.
+_GROUP_STAGE_NAME = "First Stage"
+
+
+def _parse_local_date_and_time(value: Optional[str]) -> tuple[Optional[_date], Optional[str]]:
+    """
+    Parse FIFA's ISO-8601 'LocalDate' field into a (date, "HH:MM") tuple.
+
+    FIFA encodes the local date/time as ``2026-06-11T13:00:00Z`` even though
+    it is *not* UTC (it's stadium-local). We treat the trailing 'Z' as a
+    formatting artefact and just keep the wall-clock components.
+    """
+    if not value:
+        return None, None
+    s = value.rstrip("Z")
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None, None
+    return dt.date(), dt.strftime("%H:%M")
+
+
+def _stadium_name(match: Dict[str, Any]) -> Optional[str]:
+    stadium = match.get("Stadium")
+    if not isinstance(stadium, dict):
+        return None
+    return _localize(stadium.get("Name"))
+
+
+def scrape_wc_fixtures() -> int:
+    """
+    Fetch WC2026 matches from FIFA and upsert group-stage fixtures into
+    ``wc_fixtures``.
+
+    Only the 72 group-stage matches are ingested — knockout rounds rely on
+    placeholder team slots that don't fit ``UNIQUE (match_date, home_team,
+    away_team)``. Returns the number of rows inserted/updated. Errors are
+    logged and swallowed; returns 0 on failure.
+    """
+    try:
+        matches = _fetch_wc_matches()
+    except Exception as exc:
+        logger.warning(f"[fifa] Failed to fetch WC2026 matches for fixtures: {exc}")
+        return 0
+
+    if not matches:
+        logger.info("[fifa] No matches returned from FIFA API for fixtures.")
+        return 0
+
+    engine = get_db_engine()
+    upsert_sql = text(
+        """
+        INSERT INTO wc_fixtures (
+            match_date, kickoff_time, group_name, stage,
+            home_team, away_team, venue,
+            home_goals, away_goals, status, updated_at
+        ) VALUES (
+            :match_date, :kickoff_time, :group_name, 'group',
+            :home_team, :away_team, :venue,
+            :home_goals, :away_goals, :status, NOW()
+        )
+        ON CONFLICT (match_date, home_team, away_team) DO UPDATE SET
+            kickoff_time = EXCLUDED.kickoff_time,
+            group_name = EXCLUDED.group_name,
+            venue = EXCLUDED.venue,
+            home_goals = EXCLUDED.home_goals,
+            away_goals = EXCLUDED.away_goals,
+            status = EXCLUDED.status,
+            updated_at = NOW()
+        """
+    )
+
+    affected = 0
+    skipped = 0
+    with engine.begin() as conn:
+        for m in matches:
+            stage_name = _localize(m.get("StageName"))
+            if stage_name != _GROUP_STAGE_NAME:
+                continue
+
+            group_name = _localize(m.get("GroupName"))
+            if not group_name or not group_name.startswith("Group "):
+                skipped += 1
+                continue
+
+            home_raw = _localize((m.get("Home") or {}).get("TeamName"))
+            away_raw = _localize((m.get("Away") or {}).get("TeamName"))
+            home = _to_canonical_team(home_raw)
+            away = _to_canonical_team(away_raw)
+            if not home or not away:
+                logger.warning(
+                    f"[fifa] Skipping fixture with unrecognized teams: "
+                    f"home={home_raw!r} away={away_raw!r} group={group_name!r}"
+                )
+                skipped += 1
+                continue
+
+            match_date, kickoff = _parse_local_date_and_time(m.get("LocalDate"))
+            if match_date is None:
+                match_date, kickoff = _parse_local_date_and_time(m.get("Date"))
+            if match_date is None:
+                skipped += 1
+                continue
+
+            fifa_status = m.get("MatchStatus")
+            status = _FIFA_MATCH_STATUS_TO_STATUS.get(fifa_status, "scheduled")
+
+            home_goals = m.get("HomeTeamScore") if status in ("completed", "live") else None
+            away_goals = m.get("AwayTeamScore") if status in ("completed", "live") else None
+            try:
+                home_goals = int(home_goals) if home_goals is not None else None
+                away_goals = int(away_goals) if away_goals is not None else None
+            except (TypeError, ValueError):
+                home_goals = None
+                away_goals = None
+
+            try:
+                conn.execute(
+                    upsert_sql,
+                    {
+                        "match_date": match_date,
+                        "kickoff_time": kickoff,
+                        "group_name": group_name,
+                        "home_team": home,
+                        "away_team": away,
+                        "venue": _stadium_name(m),
+                        "home_goals": home_goals,
+                        "away_goals": away_goals,
+                        "status": status,
+                    },
+                )
+                affected += 1
+            except Exception as exc:
+                logger.warning(
+                    f"[fifa] Failed to upsert fixture "
+                    f"({match_date} {home} vs {away}): {exc}"
+                )
+                skipped += 1
+
+    logger.info(
+        f"[fifa] ✓ Upserted {affected} wc_fixtures rows (skipped {skipped})"
+    )
+    print(
+        f"[fifa] ✓ Upserted {affected} wc_fixtures rows (skipped {skipped})"
+    )
+    return affected
+
+
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
     scrape_groups()
+    scrape_wc_fixtures()
