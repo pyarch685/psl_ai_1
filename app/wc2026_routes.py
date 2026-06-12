@@ -78,6 +78,14 @@ class GroupMatchPrediction(BaseModel):
     date: str
     time: Optional[str] = None
     prediction: Optional[Dict[str, Any]] = None
+    # Live/result fields, populated for matches the FIFA scraper has
+    # observed kick off. `status` mirrors `wc_fixtures.status`
+    # (scheduled / live / completed) so the frontend can switch between
+    # a pre-match prediction view and a results view. `home_goals` /
+    # `away_goals` are only meaningful for live / completed matches.
+    status: Optional[str] = None
+    home_goals: Optional[int] = None
+    away_goals: Optional[int] = None
 
 
 class GroupWinnerPrediction(BaseModel):
@@ -306,6 +314,13 @@ def _build_group_predictions(group_name: str) -> GroupPredictionsResponse:
         probs = wc2026_prediction.predict(fx["home_team"], fx["away_team"])
         outcome = wc2026_prediction.outcome_from_probs(probs)
         confidence = probs[outcome]
+        status_raw = fx.get("status")
+        # Only expose scores once the match is live or completed —
+        # `wc_fixtures.home_goals` is nullable for scheduled fixtures and
+        # we'd rather return null than 0 so the frontend can distinguish
+        # "0-0 final" from "not yet kicked off".
+        home_goals = fx.get("home_goals") if status_raw in ("completed", "live") else None
+        away_goals = fx.get("away_goals") if status_raw in ("completed", "live") else None
         matches.append(
             GroupMatchPrediction(
                 id=int(fx["id"]),
@@ -320,6 +335,9 @@ def _build_group_predictions(group_name: str) -> GroupPredictionsResponse:
                     "predicted": _outcome_display(outcome),
                     "confidence": _confidence_label(confidence),
                 },
+                status=status_raw or None,
+                home_goals=int(home_goals) if home_goals is not None else None,
+                away_goals=int(away_goals) if away_goals is not None else None,
             )
         )
 
