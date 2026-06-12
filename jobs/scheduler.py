@@ -15,7 +15,10 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from jobs.fifa_scraper import scrape_groups as scrape_wc_groups
+from jobs.fifa_scraper import (
+    scrape_groups as scrape_wc_groups,
+    scrape_wc_fixtures,
+)
 from jobs.scraper import update_fixtures, update_match_results
 
 logger = logging.getLogger(__name__)
@@ -262,13 +265,21 @@ def start_scheduler() -> None:
         replace_existing=True,
     )
 
-    # WC2026: refresh FIFA group standings once per day. Phase 1 only ships
-    # the groups scraper; fixtures/results scrapers land in Phase 2.
+    # WC2026: refresh FIFA group standings and group-stage fixtures once per
+    # day. Both share the same upstream call so we keep their cadences aligned.
     _scheduler.add_job(
         scrape_wc_groups,
         trigger="interval",
         hours=24,
         id="scrape_wc_groups",
+        replace_existing=True,
+    )
+
+    _scheduler.add_job(
+        scrape_wc_fixtures,
+        trigger="interval",
+        hours=6,
+        id="scrape_wc_fixtures",
         replace_existing=True,
     )
 
@@ -290,6 +301,11 @@ def start_scheduler() -> None:
         except Exception as e:
             logger.warning(f"[scheduler] Startup WC2026 groups scrape failed: {e}")
             print(f"[scheduler] Startup WC2026 groups scrape failed: {e}")
+        try:
+            scrape_wc_fixtures()
+        except Exception as e:
+            logger.warning(f"[scheduler] Startup WC2026 fixtures scrape failed: {e}")
+            print(f"[scheduler] Startup WC2026 fixtures scrape failed: {e}")
 
     # APScheduler's `BackgroundScheduler` doesn't expose its executor pool as
     # a public `.executors` attribute, so run the startup scrape on a plain
