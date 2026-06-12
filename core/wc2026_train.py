@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
@@ -143,6 +144,20 @@ def run(
     artifact = fit_davidson_bt(rows, l2=l2, teams=teams)
 
     metrics = evaluate(artifact, rows)
+    # Bake the evaluation result into the artifact's metadata so the API
+    # layer can surface real numbers via /wc2026/model/status without
+    # re-running evaluate() on every request. Kind is "in_sample" because
+    # we score against the same rows we fit on; a chronological holdout
+    # split is a deliberate follow-up.
+    artifact.metadata["evaluation"] = {
+        "accuracy": float(metrics["accuracy"]),
+        "log_loss": float(metrics["log_loss"]),
+        "brier": float(metrics["brier"]),
+        "pred_draw_rate": float(metrics["pred_draw_rate"]),
+        "n_matches": int(metrics["n_matches"]),
+        "evaluated_at": datetime.now(timezone.utc).isoformat(),
+        "evaluation_kind": "in_sample",
+    }
     print(
         f"\nFit complete:"
         f"\n  final NLL: {artifact.final_nll:.2f}"

@@ -12,6 +12,7 @@ Phase 1 contract (matches `src/wc2026/lib/api.ts`):
 - GET  /predictions/group/{name}      auth    (FIFA-Elo predictions per group)
 - GET  /wc2026/fixtures               public  (tournament-wide fixtures by day)
 - GET  /wc2026/teams                  public  (48 nations in the WC2026 draw)
+- GET  /wc2026/model/status           public  (live BT artifact metrics)
 - GET  /wc2026/predictions            auth    (current user's saved picks)
 - PUT  /wc2026/predictions/group/{g}  auth    (bulk upsert per group)
 - POST /payments/paystack/init        auth    (Phase 1 stub — 503)
@@ -31,6 +32,8 @@ from sqlalchemy import text
 
 from core import wc2026_prediction
 from core.fifa_rankings import has_rank
+from core.wc2026_dataset import DEFAULT_DATA_PATH, load_h2h_rows
+from core.wc2026_model import BTArtifact, evaluate as wc2026_evaluate
 from db.engine import get_db_engine
 from db.seed_wc2026 import GROUPS as STATIC_GROUPS
 
@@ -104,6 +107,34 @@ class GroupPredictionsResponse(BaseModel):
 
 class TeamsResponse(BaseModel):
     teams: List[str]
+
+
+class Wc2026ModelEvaluation(BaseModel):
+    """Headline accuracy metrics for the WC2026 BT artifact.
+
+    `evaluation_kind` is `"in_sample"` when the metrics were baked in at
+    training time (the common case after a fresh retrain) and
+    `"in_sample_recomputed"` when the API layer had to re-derive them at
+    runtime because the loaded artifact predates this feature. Both are
+    in-sample — a chronological holdout split is a tracked follow-up.
+    """
+
+    accuracy: float
+    log_loss: float
+    brier: float
+    pred_draw_rate: float
+    n_matches: int
+    evaluated_at: str
+    evaluation_kind: str  # 'in_sample' | 'in_sample_recomputed'
+
+
+class Wc2026ModelStatusResponse(BaseModel):
+    status: str  # 'ready' | 'unavailable'
+    model_version: Optional[str] = None
+    serving_with: str  # see core.wc2026_prediction._model_in_use()
+    teams_count: Optional[int] = None
+    n_matches: Optional[int] = None
+    evaluation: Optional[Wc2026ModelEvaluation] = None
 
 
 class UserPrediction(BaseModel):
@@ -605,6 +636,65 @@ def _build_group_predictions(group_name: str) -> GroupPredictionsResponse:
     return GroupPredictionsResponse(matches=matches, winner=winner)
 
 
+# ---------- Model status helpers --------------------------------------------
+
+def _get_evaluation_metrics(
+    artifact: BTArtifact,
+) -> Optional[Dict[str, Any]]:
+    """
+    Resolve in-sample evaluation metrics for the loaded WC2026 artifact.
+
+    Fast path: a recently-trained artifact already has metrics baked into
+    `metadata["evaluation"]` (see core.wc2026_train), so we just hand them
+    back unmodified.
+
+    Slow path (one-shot per process lifetime): older artifacts saved before
+    that change have no `evaluation` key. We recompute from the on-disk H2H
+    CSV via `wc2026_evaluate` and memoise the result on `artifact.metadata`
+    so subsequent calls are O(1). The kind is tagged
+    `in_sample_recomputed` so the UI / future debugging can tell it apart
+    from a bake-in.
+
+    Returns None only if the metadata is missing AND the CSV cannot be
+    loaded (e.g. the file is absent in a slimmed-down container build) —
+    callers should serialise `evaluation: null` in that case.
+    """
+    existing = artifact.metadata.get("evaluation")
+    if isinstance(existing, dict) and "accuracy" in existing:
+        return existing
+
+    try:
+        rows = load_h2h_rows(DEFAULT_DATA_PATH)
+        metrics = wc2026_evaluate(artifact, rows)
+    except FileNotFoundError:
+        logger.warning(
+            "[wc2026] H2H dataset missing at %s — cannot backfill metrics.",
+            DEFAULT_DATA_PATH,
+        )
+        return None
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning(
+            "[wc2026] Failed to lazily recompute model metrics: %s", exc,
+        )
+        return None
+
+    recomputed = {
+        "accuracy": float(metrics["accuracy"]),
+        "log_loss": float(metrics["log_loss"]),
+        "brier": float(metrics["brier"]),
+        "pred_draw_rate": float(metrics["pred_draw_rate"]),
+        "n_matches": int(metrics["n_matches"]),
+        "evaluated_at": datetime.utcnow().isoformat() + "Z",
+        "evaluation_kind": "in_sample_recomputed",
+    }
+    # Cache on the artifact so subsequent requests in this process skip
+    # the recompute. We intentionally do NOT re-pickle to disk — running
+    # under uvicorn we don't want a request handler to touch the model
+    # file. A proper bake-in happens on the next `python -m core.wc2026_train`.
+    artifact.metadata["evaluation"] = recomputed
+    return recomputed
+
+
 # ---------- Registration helper ---------------------------------------------
 
 def register_wc2026_routes(
@@ -743,6 +833,43 @@ def register_wc2026_routes(
         """
         teams = sorted({t for teams in STATIC_GROUPS.values() for t in teams})
         return TeamsResponse(teams=teams)
+
+    @app.get("/wc2026/model/status", response_model=Wc2026ModelStatusResponse)
+    async def get_wc2026_model_status() -> Wc2026ModelStatusResponse:
+        """
+        Return live WC2026 model status for the /wc2026 Status tab.
+
+        Public — exposes the model_version, training-set size, and the
+        in-sample evaluation metrics produced by `core.wc2026_model.evaluate`.
+        No secrets / fitted strengths are surfaced.
+
+        If the loaded artifact predates the metric-bake-in change (#issue),
+        metrics are lazily recomputed from the on-disk H2H CSV and cached
+        in memory. The frontend can disambiguate the two via
+        `evaluation.evaluation_kind`.
+        """
+        artifact = wc2026_prediction._BT_ARTIFACT
+        serving_with = wc2026_prediction._model_in_use()
+
+        if artifact is None:
+            return Wc2026ModelStatusResponse(
+                status="unavailable",
+                serving_with=serving_with,
+            )
+
+        evaluation_payload: Optional[Wc2026ModelEvaluation] = None
+        metrics = _get_evaluation_metrics(artifact)
+        if metrics is not None:
+            evaluation_payload = Wc2026ModelEvaluation(**metrics)
+
+        return Wc2026ModelStatusResponse(
+            status="ready",
+            model_version=artifact.model_version,
+            serving_with=serving_with,
+            teams_count=len(artifact.teams),
+            n_matches=int(artifact.n_matches),
+            evaluation=evaluation_payload,
+        )
 
     @app.get("/wc2026/predictions", response_model=UserPredictionsResponse)
     async def get_wc2026_user_predictions(
