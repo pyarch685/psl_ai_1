@@ -54,6 +54,13 @@ docs/*
 data/seasons/
 data/stats/
 data/*.csv
+# WC2026 datasets ARE needed at runtime:
+#   - wc2026_48_teams_h2h_summary_2006_2026.csv (~128 KB) backs the
+#     /wc2026/model/status lazy-recompute path when the loaded BT
+#     artifact predates the in-artifact metric bake-in.
+#   - wc2026_48_teams_used.csv (<1 KB) is consumed by core.wc2026_train
+#     to keep cold-start teams in the artifact.
+!data/wc2026_*.csv
 
 # Frontend source (served separately)
 web/
