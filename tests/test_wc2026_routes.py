@@ -248,6 +248,115 @@ def test_predictions_group_exposes_scores_for_completed_matches(app_with_stub_us
     assert kor["away_goals"] == 1
 
 
+def test_wc2026_fixtures_default_returns_today_plus_window(
+    app_with_stub_user, monkeypatch
+):
+    """Default mode: today + 6 future days, including completed-match scores."""
+    from datetime import date as _date
+
+    from app import wc2026_routes
+
+    # Pin "today" so the test is stable regardless of when it runs.
+    class _FixedDate(_date):
+        @classmethod
+        def today(cls):
+            return _date(2026, 6, 12)
+
+    monkeypatch.setattr(wc2026_routes, "_date", _FixedDate)
+
+    app, engine, _user = app_with_stub_user
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_fixtures "
+                "(match_date, kickoff_time, group_name, stage, home_team, away_team, "
+                " venue, home_goals, away_goals, status) "
+                "VALUES "
+                # Outside window (past) — must be excluded
+                "('2026-06-11', '20:00', 'Group A', 'group', 'Mexico', 'South Africa', "
+                " 'Estadio Azteca', 2, 0, 'completed'), "
+                # Today, completed earlier in the day
+                "('2026-06-12', '15:00', 'Group A', 'group', 'Korea Republic', 'Czechia', "
+                " 'BMO Field', 2, 1, 'completed'), "
+                # Today, still scheduled (no scores should leak)
+                "('2026-06-12', '21:00', 'Group B', 'group', 'Canada', 'Switzerland', "
+                " 'BMO Field', NULL, NULL, 'scheduled'), "
+                # Day +6, in window
+                "('2026-06-18', '20:00', 'Group C', 'group', 'Brazil', 'Morocco', "
+                " 'MetLife Stadium', NULL, NULL, 'scheduled'), "
+                # Day +7, just out of window
+                "('2026-06-19', '15:00', 'Group D', 'group', 'USA', 'Australia', "
+                " 'AT&T Stadium', NULL, NULL, 'scheduled')"
+            )
+        )
+
+    client = TestClient(app)
+    resp = client.get("/wc2026/fixtures")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["date_from"] == "2026-06-12"
+    assert body["date_to"] == "2026-06-18"
+    assert body["count"] == 3
+
+    pairs = [(f["home_team"], f["away_team"]) for f in body["fixtures"]]
+    assert ("Mexico", "South Africa") not in pairs  # before window
+    assert ("USA", "Australia") not in pairs  # after window
+    assert ("Korea Republic", "Czechia") in pairs
+    assert ("Canada", "Switzerland") in pairs
+    assert ("Brazil", "Morocco") in pairs
+
+    by_pair = {(f["home_team"], f["away_team"]): f for f in body["fixtures"]}
+
+    # Completed match exposes scores.
+    kor = by_pair[("Korea Republic", "Czechia")]
+    assert kor["status"] == "completed"
+    assert kor["home_goals"] == 2
+    assert kor["away_goals"] == 1
+    assert kor["prediction"] is not None  # FIFA-Elo can predict known teams
+
+    # Scheduled match keeps scores nulled.
+    can = by_pair[("Canada", "Switzerland")]
+    assert can["status"] == "scheduled"
+    assert can["home_goals"] is None
+    assert can["away_goals"] is None
+
+
+def test_wc2026_fixtures_date_filter_returns_only_that_day(app_with_stub_user):
+    """?date=YYYY-MM-DD narrows the response to a single calendar day."""
+    app, engine, _user = app_with_stub_user
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_fixtures "
+                "(match_date, kickoff_time, group_name, stage, home_team, away_team, "
+                " venue, status) "
+                "VALUES "
+                "('2026-06-12', '15:00', 'Group A', 'group', 'Korea Republic', 'Czechia', "
+                " 'BMO Field', 'completed'), "
+                "('2026-06-12', '21:00', 'Group B', 'group', 'Canada', 'Switzerland', "
+                " 'BMO Field', 'scheduled'), "
+                "('2026-06-13', '20:00', 'Group C', 'group', 'Brazil', 'Morocco', "
+                " 'MetLife Stadium', 'scheduled')"
+            )
+        )
+
+    client = TestClient(app)
+    resp = client.get("/wc2026/fixtures?date=2026-06-12")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["date_from"] == body["date_to"] == "2026-06-12"
+    assert body["count"] == 2
+    assert all(f["match_date"] == "2026-06-12" for f in body["fixtures"])
+
+
+def test_wc2026_fixtures_rejects_invalid_date_param(app_with_stub_user):
+    client = TestClient(app_with_stub_user[0])
+    # Wrong shape — pydantic regex rejects at validation layer.
+    resp = client.get("/wc2026/fixtures?date=06-12-2026")
+    assert resp.status_code == 422
+
+
 def test_unlocks_returns_empty_list_for_user_with_no_unlocks(app_with_stub_user):
     app, _engine, _user = app_with_stub_user
     client = TestClient(app)
