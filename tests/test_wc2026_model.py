@@ -185,6 +185,37 @@ def test_evaluate_returns_finite_metrics_on_real_data():
     assert metrics["log_loss"] < math.log(3.0)
 
 
+# ---------- Training-time metric persistence --------------------------------
+
+
+def test_train_persists_evaluation_metadata(tmp_path):
+    """
+    `core.wc2026_train.run` must bake `evaluate()`'s output into the
+    artifact's metadata so the /wc2026/model/status endpoint can read it
+    back without re-running evaluation on every request.
+    """
+    from core import wc2026_train
+
+    out_path = tmp_path / "test_bt.joblib"
+    wc2026_train.run(out_path=out_path)
+
+    loaded = load_artifact(out_path)
+    assert isinstance(loaded.metadata, dict)
+    assert "evaluation" in loaded.metadata, (
+        "evaluation metrics must be persisted with the artifact"
+    )
+
+    ev = loaded.metadata["evaluation"]
+    assert ev["evaluation_kind"] == "in_sample"
+    assert 0.0 <= ev["accuracy"] <= 1.0
+    assert ev["log_loss"] > 0.0
+    assert ev["brier"] > 0.0
+    assert 0.0 <= ev["pred_draw_rate"] <= 1.0
+    assert ev["n_matches"] > 0
+    # `evaluated_at` should round-trip as an ISO-8601 string.
+    assert isinstance(ev["evaluated_at"], str) and "T" in ev["evaluated_at"]
+
+
 # ---------- Predict-layer routing -------------------------------------------
 
 

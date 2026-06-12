@@ -34,7 +34,7 @@ import logging
 import math
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import joblib
 import numpy as np
@@ -72,7 +72,11 @@ class BTArtifact:
     n_pairs: int
     final_nll: float
     model_version: str = MODEL_VERSION
-    metadata: Dict[str, float] = field(default_factory=dict)
+    # `metadata` is intentionally permissive — it already mixes numeric fit
+    # diagnostics (`iterations`, `theta_std`, `success`) with nested dicts
+    # such as `evaluation` (set by `core.wc2026_train.run`) and is consumed
+    # by the API layer for the /wc2026/model/status response.
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 def _matches_per_team(rows: List[H2HRow], teams: Sequence[str]) -> Dict[str, int]:

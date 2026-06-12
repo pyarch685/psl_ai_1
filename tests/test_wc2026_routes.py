@@ -710,5 +710,178 @@ def test_wc2026_predict_rejects_empty_team(app_with_stub_user):
     assert resp.status_code in (400, 422)
 
 
+# ---------- /wc2026/model/status --------------------------------------------
+
+def _make_stub_artifact(metadata: dict):
+    """
+    Build a minimal BTArtifact for the model-status tests.
+
+    The route only reads `model_version`, `teams`, `n_matches`, and
+    `metadata`, so we don't bother fitting anything — the strengths /
+    draw_param are placeholders.
+    """
+    from core.wc2026_model import BTArtifact
+    return BTArtifact(
+        teams=["Argentina", "Brazil", "France"],
+        strengths={"Argentina": 0.5, "Brazil": 0.3, "France": 0.1},
+        n_matches_per_team={"Argentina": 100, "Brazil": 80, "France": 60},
+        draw_param=-1.2,
+        l2=0.5,
+        n_matches=240,
+        n_pairs=3,
+        final_nll=123.4,
+        metadata=metadata,
+    )
+
+
+def test_wc2026_model_status_returns_ready_when_artifact_loaded(
+    app_with_stub_user, monkeypatch,
+):
+    """
+    Happy path: artifact already has baked-in `evaluation` metadata
+    (i.e. the model was retrained after this feature shipped).
+    """
+    from core import wc2026_prediction
+
+    art = _make_stub_artifact(
+        metadata={
+            "evaluation": {
+                "accuracy": 0.6789,
+                "log_loss": 0.91,
+                "brier": 0.18,
+                "pred_draw_rate": 0.27,
+                "n_matches": 240,
+                "evaluated_at": "2026-06-12T12:00:00+00:00",
+                "evaluation_kind": "in_sample",
+            },
+        }
+    )
+    monkeypatch.setattr(wc2026_prediction, "_BT_ARTIFACT", art)
+
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+    resp = client.get("/wc2026/model/status")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["status"] == "ready"
+    assert body["model_version"] == art.model_version
+    assert body["teams_count"] == 3
+    assert body["n_matches"] == 240
+    assert body["serving_with"] == art.model_version
+
+    ev = body["evaluation"]
+    assert ev is not None
+    assert ev["accuracy"] == pytest.approx(0.6789)
+    assert ev["log_loss"] == pytest.approx(0.91)
+    assert ev["brier"] == pytest.approx(0.18)
+    assert ev["pred_draw_rate"] == pytest.approx(0.27)
+    assert ev["n_matches"] == 240
+    assert ev["evaluation_kind"] == "in_sample"
+
+
+def test_wc2026_model_status_recomputes_when_metadata_missing(
+    app_with_stub_user, monkeypatch,
+):
+    """
+    Older artifacts predate the bake-in change. The route should lazily
+    recompute metrics from the H2H dataset, tag them `in_sample_recomputed`,
+    and memoise the result on the artifact so the next call is O(1).
+    """
+    from app import wc2026_routes
+    from core import wc2026_prediction
+
+    art = _make_stub_artifact(metadata={})  # NO evaluation key
+    monkeypatch.setattr(wc2026_prediction, "_BT_ARTIFACT", art)
+
+    # Stub the H2H loader so the test doesn't depend on the real CSV.
+    # The recompute path calls wc2026_evaluate(artifact, rows) — passing
+    # an empty list is fine because evaluate() handles n_matches==0
+    # gracefully (returns accuracy == 0.0).
+    monkeypatch.setattr(
+        wc2026_routes, "load_h2h_rows", lambda _path: [],
+    )
+
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+    resp = client.get("/wc2026/model/status")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    ev = body["evaluation"]
+    assert ev is not None
+    assert ev["evaluation_kind"] == "in_sample_recomputed"
+    assert 0.0 <= ev["accuracy"] <= 1.0
+
+    # Memoised on the artifact — second call must not re-invoke load_h2h_rows.
+    sentinel = {"called": 0}
+
+    def _exploding_loader(_path):
+        sentinel["called"] += 1
+        raise RuntimeError("should not be called when cached")
+
+    monkeypatch.setattr(wc2026_routes, "load_h2h_rows", _exploding_loader)
+    resp2 = client.get("/wc2026/model/status")
+    assert resp2.status_code == 200
+    assert sentinel["called"] == 0
+
+
+def test_wc2026_model_status_returns_unavailable_when_no_artifact(
+    app_with_stub_user, monkeypatch,
+):
+    """
+    No artifact loaded (e.g. fresh deploy before any training run). The
+    response should be HTTP 200 with status='unavailable' so the frontend
+    can render an empty state — NOT a 5xx that breaks the page.
+    """
+    from core import wc2026_prediction
+
+    monkeypatch.setattr(wc2026_prediction, "_BT_ARTIFACT", None)
+
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+    resp = client.get("/wc2026/model/status")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["status"] == "unavailable"
+    assert body["model_version"] is None
+    assert body["evaluation"] is None
+    assert body["teams_count"] is None
+    assert body["n_matches"] is None
+    # serving_with should still resolve — _model_in_use() returns the
+    # phase-1 fallback tag in this case.
+    assert isinstance(body["serving_with"], str)
+    assert body["serving_with"]
+
+
+def test_wc2026_model_status_returns_null_eval_when_csv_missing(
+    app_with_stub_user, monkeypatch,
+):
+    """
+    Artifact has no `evaluation` metadata AND the H2H CSV is unavailable
+    (e.g. slimmed-down container). The route should degrade to
+    `evaluation: null` rather than 500ing.
+    """
+    from app import wc2026_routes
+    from core import wc2026_prediction
+
+    art = _make_stub_artifact(metadata={})
+    monkeypatch.setattr(wc2026_prediction, "_BT_ARTIFACT", art)
+
+    def _missing(_path):
+        raise FileNotFoundError("simulated missing CSV")
+
+    monkeypatch.setattr(wc2026_routes, "load_h2h_rows", _missing)
+
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+    resp = client.get("/wc2026/model/status")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ready"
+    assert body["evaluation"] is None
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
