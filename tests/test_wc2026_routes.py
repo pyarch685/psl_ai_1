@@ -103,15 +103,18 @@ def app_with_stub_user():
     # (the routes module captured the function reference at import time).
     import db.engine as db_engine_mod
     from app import wc2026_routes
+    from core import wc_prediction_store
 
     original_db_engine = db_engine_mod.get_db_engine
     original_routes_engine = wc2026_routes.get_db_engine
+    original_store_engine = wc_prediction_store.get_db_engine
 
     def _stub_engine():
         return engine
 
     db_engine_mod.get_db_engine = _stub_engine
     wc2026_routes.get_db_engine = _stub_engine
+    wc_prediction_store.get_db_engine = _stub_engine
 
     try:
         app = FastAPI()
@@ -125,6 +128,7 @@ def app_with_stub_user():
     finally:
         db_engine_mod.get_db_engine = original_db_engine
         wc2026_routes.get_db_engine = original_routes_engine
+        wc_prediction_store.get_db_engine = original_store_engine
 
 
 def test_groups_standings_returns_seeded_draw_when_db_is_empty(app_with_stub_user):
@@ -881,6 +885,283 @@ def test_wc2026_model_status_returns_null_eval_when_csv_missing(
     body = resp.json()
     assert body["status"] == "ready"
     assert body["evaluation"] is None
+
+
+# ---------- /wc2026/benchmark ------------------------------------------------
+
+def _stub_predict(monkeypatch):
+    """Make wc2026_prediction.predict deterministic regardless of teams."""
+    from core import wc2026_prediction as _wp
+
+    monkeypatch.setattr(
+        _wp,
+        "predict",
+        lambda h, a: {"Home": 0.6, "Draw": 0.25, "Away": 0.15},
+    )
+    monkeypatch.setattr(_wp, "_model_in_use", lambda: "stub_v1")
+
+
+def _seed_resolved_pred(
+    engine,
+    *,
+    fixture_id: int,
+    predicted: str,
+    actual_home: int,
+    actual_away: int,
+    snapshot_kind: str = "pre_match",
+    confidence: float = 0.6,
+):
+    """
+    Insert a wc_predictions row already in the resolved state. We bypass
+    the snapshot helper so the test can pin both the prediction outcome
+    and the snapshot_kind directly.
+    """
+    actual = (
+        "Home" if actual_home > actual_away
+        else "Away" if actual_away > actual_home
+        else "Draw"
+    )
+    is_correct = predicted == actual
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_predictions ("
+                " fixture_id, predicted_outcome, prob_home, prob_draw, prob_away,"
+                " confidence, model_version, snapshot_kind, predicted_at,"
+                " actual_outcome, actual_home_goals, actual_away_goals,"
+                " is_correct, resolved_at"
+                ") VALUES ("
+                " :fid, :pred, 0.6, 0.25, 0.15,"
+                " :conf, 'stub_v1', :kind, CURRENT_TIMESTAMP,"
+                " :actual, :ahg, :aag, :correct, CURRENT_TIMESTAMP"
+                ")"
+            ),
+            {
+                "fid": fixture_id,
+                "pred": predicted,
+                "conf": confidence,
+                "kind": snapshot_kind,
+                "actual": actual,
+                "ahg": actual_home,
+                "aag": actual_away,
+                "correct": 1 if is_correct else 0,
+            },
+        )
+
+
+def test_wc2026_benchmark_empty_state_returns_zeroed_summary(
+    app_with_stub_user,
+):
+    """No predictions, no fixtures - well-formed empty payload."""
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+    resp = client.get("/wc2026/benchmark")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["summary"]["total_matches"] == 0
+    assert body["summary"]["correct"] == 0
+    assert body["summary"]["incorrect"] == 0
+    assert body["summary"]["pending"] == 0
+    assert body["summary"]["accuracy"] == 0.0
+    assert body["summary"]["accuracy_by_kind"] == []
+    assert body["summary"]["accuracy_by_confidence"] == []
+    assert body["summary"]["accuracy_by_period"] == []
+    assert body["matches"] == []
+    assert body["message"]
+
+
+def test_wc2026_benchmark_pending_count_reflects_unresolved_snapshots(
+    app_with_stub_user, monkeypatch,
+):
+    """Snapshots without resolved_at land in `pending`, not `total_matches`."""
+    _stub_predict(monkeypatch)
+
+    app, engine, _user = app_with_stub_user
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_fixtures "
+                "(match_date, kickoff_time, group_name, stage,"
+                " home_team, away_team, status) "
+                "VALUES "
+                "('2026-06-30', '20:00', 'Group A', 'group',"
+                " 'Mexico', 'Korea Republic', 'scheduled')"
+            )
+        )
+
+    # Run snapshot to populate wc_predictions for the unscored fixture.
+    from core.wc_prediction_store import snapshot_wc_predictions
+    snapshot_wc_predictions(engine=engine)
+
+    client = TestClient(app)
+    resp = client.get("/wc2026/benchmark")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["summary"]["pending"] == 1
+    assert body["summary"]["total_matches"] == 0
+    assert body["matches"] == []
+
+
+def test_wc2026_benchmark_returns_resolved_matches_with_kind_split(
+    app_with_stub_user,
+):
+    """
+    Three resolved rows: two pre_match (1 correct, 1 wrong), one retroactive
+    (correct). Verify summary math, kind split, and per-row payload.
+    """
+    app, engine, _user = app_with_stub_user
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO wc_fixtures "
+                "(id, match_date, kickoff_time, group_name, stage,"
+                " home_team, away_team, home_goals, away_goals, status) "
+                "VALUES "
+                "(101, '2026-06-11', '20:00', 'Group A', 'group',"
+                " 'Mexico', 'South Africa', 2, 0, 'completed'),"
+                "(102, '2026-06-12', '15:00', 'Group A', 'group',"
+                " 'Korea Republic', 'Czechia', 0, 1, 'completed'),"
+                "(103, '2026-06-13', '12:00', 'Group B', 'group',"
+                " 'Argentina', 'Saudi Arabia', 1, 0, 'completed')"
+            )
+        )
+
+    # Pre-match correct: predicted Home, actual Home (Mexico won 2-0).
+    _seed_resolved_pred(
+        engine, fixture_id=101, predicted="Home",
+        actual_home=2, actual_away=0,
+        snapshot_kind="pre_match", confidence=0.7,
+    )
+    # Pre-match wrong: predicted Home, actual Away (Czechia won 0-1).
+    _seed_resolved_pred(
+        engine, fixture_id=102, predicted="Home",
+        actual_home=0, actual_away=1,
+        snapshot_kind="pre_match", confidence=0.45,
+    )
+    # Retroactive correct: predicted Home, actual Home.
+    _seed_resolved_pred(
+        engine, fixture_id=103, predicted="Home",
+        actual_home=1, actual_away=0,
+        snapshot_kind="retroactive", confidence=0.8,
+    )
+
+    client = TestClient(app)
+    resp = client.get("/wc2026/benchmark")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    summary = body["summary"]
+    assert summary["total_matches"] == 3
+    assert summary["correct"] == 2
+    assert summary["incorrect"] == 1
+    assert summary["pending"] == 0
+    assert summary["accuracy"] == pytest.approx(2 / 3)
+
+    kinds = {k["snapshot_kind"]: k for k in summary["accuracy_by_kind"]}
+    assert kinds["pre_match"]["total"] == 2
+    assert kinds["pre_match"]["correct"] == 1
+    assert kinds["pre_match"]["incorrect"] == 1
+    assert kinds["pre_match"]["accuracy"] == pytest.approx(0.5)
+    assert kinds["retroactive"]["total"] == 1
+    assert kinds["retroactive"]["correct"] == 1
+    assert kinds["retroactive"]["accuracy"] == pytest.approx(1.0)
+
+    matches = body["matches"]
+    assert len(matches) == 3
+    # Newest first by match_date.
+    assert [m["match_date"] for m in matches] == [
+        "2026-06-13", "2026-06-12", "2026-06-11",
+    ]
+    for row in matches:
+        assert row["snapshot_kind"] in {"pre_match", "retroactive"}
+        assert row["confidence"] in {"Low", "Medium", "High"}
+        assert row["predicted_outcome"] in {"Home Win", "Draw", "Away Win"}
+
+    # Confidence buckets cover the seeded values: 0.45 -> Medium, 0.7 / 0.8 -> High.
+    confs = {b["confidence"]: b for b in summary["accuracy_by_confidence"]}
+    assert "High" in confs
+    assert "Medium" in confs
+    assert confs["High"]["count"] == 2
+    assert confs["Medium"]["count"] == 1
+
+
+def test_wc2026_benchmark_holdout_block_carries_artifact_metrics(
+    app_with_stub_user, monkeypatch,
+):
+    """
+    With a baked-in `evaluation` block on the artifact, /wc2026/benchmark
+    surfaces it under `holdout` so the FE can show the model's training
+    metrics alongside live results.
+    """
+    from core import wc2026_prediction
+
+    art = _make_stub_artifact(
+        metadata={
+            "evaluation": {
+                "accuracy": 0.55,
+                "log_loss": 0.92,
+                "brier": 0.20,
+                "pred_draw_rate": 0.27,
+                "n_matches": 240,
+                "evaluated_at": "2026-06-01T00:00:00Z",
+                "evaluation_kind": "in_sample",
+            }
+        }
+    )
+    monkeypatch.setattr(wc2026_prediction, "_BT_ARTIFACT", art)
+
+    app, _engine, _user = app_with_stub_user
+    client = TestClient(app)
+    resp = client.get("/wc2026/benchmark")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["holdout"] is not None
+    assert body["holdout"]["accuracy"] == pytest.approx(0.55)
+    assert body["holdout"]["evaluation_kind"] == "in_sample"
+    assert body["holdout"]["n_matches"] == 240
+
+
+def test_wc2026_benchmark_requires_auth():
+    """
+    Unauthenticated callers get 401 - matches the PSL /benchmark contract.
+    """
+    from sqlalchemy import create_engine
+    from sqlalchemy.pool import StaticPool
+
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+
+    import db.engine as db_engine_mod
+    from app import wc2026_routes
+    from core import wc_prediction_store
+
+    monkeypatch_engine = wc2026_routes.get_db_engine
+    monkeypatch_db = db_engine_mod.get_db_engine
+    monkeypatch_store = wc_prediction_store.get_db_engine
+    db_engine_mod.get_db_engine = lambda: engine
+    wc2026_routes.get_db_engine = lambda: engine
+    wc_prediction_store.get_db_engine = lambda: engine
+
+    try:
+        from fastapi import FastAPI, HTTPException
+        app = FastAPI()
+
+        async def reject_user():
+            raise HTTPException(status_code=401, detail="unauth")
+
+        wc2026_routes.register_wc2026_routes(app, reject_user)
+        client = TestClient(app)
+        resp = client.get("/wc2026/benchmark")
+        assert resp.status_code == 401
+    finally:
+        db_engine_mod.get_db_engine = monkeypatch_db
+        wc2026_routes.get_db_engine = monkeypatch_engine
+        wc_prediction_store.get_db_engine = monkeypatch_store
 
 
 if __name__ == "__main__":

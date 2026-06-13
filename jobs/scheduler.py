@@ -194,6 +194,65 @@ def resolve_prediction_outcomes() -> None:
         print(f"[scheduler] ⚠️  resolve_prediction_outcomes failed: {exc}")
 
 
+def snapshot_wc_predictions_job() -> None:
+    """
+    Snapshot the WC2026 BT model's prediction for every wc_fixtures row
+    that doesn't yet have a wc_predictions entry.
+
+    Insert-only - rows are tagged 'pre_match' if kickoff is still in the
+    future at insert time, else 'retroactive' (the WC2026 artifact is
+    offline-trained, so retroactive rows are functionally identical to
+    pre-match).
+
+    Fails gracefully.
+    """
+    try:
+        from core.wc_prediction_store import snapshot_wc_predictions
+
+        stats = snapshot_wc_predictions()
+        if (
+            stats["inserted_pre_match"]
+            or stats["inserted_retroactive"]
+            or stats["failed"]
+        ):
+            print(
+                "[scheduler] ✓ snapshot_wc_predictions: "
+                f"considered={stats['considered']} "
+                f"inserted_pre_match={stats['inserted_pre_match']} "
+                f"inserted_retroactive={stats['inserted_retroactive']} "
+                f"skipped={stats['skipped']} failed={stats['failed']}"
+            )
+    except Exception as exc:
+        logger.error(
+            f"[scheduler] Failed to snapshot WC predictions: {exc}",
+            exc_info=True,
+        )
+        print(f"[scheduler] ⚠️  snapshot_wc_predictions failed: {exc}")
+
+
+def backfill_wc_predictions_job() -> None:
+    """
+    Fill ``actual_*`` columns on wc_predictions whose fixture has been
+    marked completed in wc_fixtures.
+
+    Fails gracefully.
+    """
+    try:
+        from core.wc_prediction_store import backfill_completed_wc_predictions
+
+        stats = backfill_completed_wc_predictions()
+        if stats["resolved"]:
+            print(
+                f"[scheduler] ✓ backfill_wc_predictions: resolved={stats['resolved']}"
+            )
+    except Exception as exc:
+        logger.error(
+            f"[scheduler] Failed to backfill WC predictions: {exc}",
+            exc_info=True,
+        )
+        print(f"[scheduler] ⚠️  backfill_wc_predictions failed: {exc}")
+
+
 def start_scheduler() -> None:
     """
     Start the background scheduler.
@@ -283,6 +342,25 @@ def start_scheduler() -> None:
         replace_existing=True,
     )
 
+    # WC2026 model benchmark plumbing. Snapshot first so freshly-scraped
+    # fixtures get a prediction row; backfill afterwards so any newly
+    # completed match resolves on the same tick.
+    _scheduler.add_job(
+        snapshot_wc_predictions_job,
+        trigger="interval",
+        hours=1,
+        id="snapshot_wc_predictions",
+        replace_existing=True,
+    )
+
+    _scheduler.add_job(
+        backfill_wc_predictions_job,
+        trigger="interval",
+        hours=1,
+        id="backfill_wc_predictions",
+        replace_existing=True,
+    )
+
     _scheduler.start()
 
     # Run scraper immediately on startup (don't wait for first interval)
@@ -306,6 +384,16 @@ def start_scheduler() -> None:
         except Exception as e:
             logger.warning(f"[scheduler] Startup WC2026 fixtures scrape failed: {e}")
             print(f"[scheduler] Startup WC2026 fixtures scrape failed: {e}")
+        try:
+            snapshot_wc_predictions_job()
+            backfill_wc_predictions_job()
+        except Exception as e:
+            logger.warning(
+                f"[scheduler] Startup WC2026 prediction snapshot/backfill failed: {e}"
+            )
+            print(
+                f"[scheduler] Startup WC2026 prediction snapshot/backfill failed: {e}"
+            )
 
     # APScheduler's `BackgroundScheduler` doesn't expose its executor pool as
     # a public `.executors` attribute, so run the startup scrape on a plain

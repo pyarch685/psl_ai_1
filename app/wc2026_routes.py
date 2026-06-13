@@ -13,6 +13,7 @@ Phase 1 contract (matches `src/wc2026/lib/api.ts`):
 - GET  /wc2026/fixtures               public  (tournament-wide fixtures by day)
 - GET  /wc2026/teams                  public  (48 nations in the WC2026 draw)
 - GET  /wc2026/model/status           public  (live BT artifact metrics)
+- GET  /wc2026/benchmark              auth    (model predictions vs real results)
 - GET  /wc2026/predictions            auth    (current user's saved picks)
 - PUT  /wc2026/predictions/group/{g}  auth    (bulk upsert per group)
 - POST /payments/paystack/init        auth    (Phase 1 stub — 503)
@@ -196,6 +197,75 @@ class PaystackInitRequest(BaseModel):
     item_key: str
     amount_usd: float
     callback_url: Optional[str] = None
+
+
+class Wc2026BenchmarkBucketAccuracy(BaseModel):
+    """Accuracy for one confidence bucket (Low / Medium / High)."""
+
+    confidence: str
+    accuracy: float
+    count: int
+
+
+class Wc2026BenchmarkPeriodAccuracy(BaseModel):
+    """Accuracy for one calendar period (YYYY-MM key)."""
+
+    period: str
+    accuracy: float
+    correct: int
+    total: int
+
+
+class Wc2026BenchmarkKindAccuracy(BaseModel):
+    """
+    Accuracy for one snapshot_kind subset (`pre_match` or `retroactive`).
+
+    The pre-match subset is the trustworthy benchmark; the retroactive
+    subset is only honest because the WC2026 BT artifact is offline-trained.
+    """
+
+    snapshot_kind: str  # 'pre_match' | 'retroactive'
+    total: int
+    correct: int
+    incorrect: int
+    accuracy: float
+
+
+class Wc2026BenchmarkSummary(BaseModel):
+    total_matches: int
+    correct: int
+    incorrect: int
+    pending: int
+    accuracy: float
+    accuracy_by_kind: List[Wc2026BenchmarkKindAccuracy]
+    accuracy_by_confidence: List[Wc2026BenchmarkBucketAccuracy]
+    accuracy_by_period: List[Wc2026BenchmarkPeriodAccuracy]
+
+
+class Wc2026BenchmarkMatch(BaseModel):
+    """A single resolved row for the benchmark match-by-match table."""
+
+    id: int
+    fixture_id: int
+    match_date: str
+    kickoff_time: Optional[str] = None
+    group_name: Optional[str] = None
+    stage: str
+    home_team: str
+    away_team: str
+    predicted_outcome: str  # 'Home Win' | 'Draw' | 'Away Win'
+    actual_outcome: Optional[str] = None
+    actual_score: Optional[str] = None
+    correct: Optional[bool] = None
+    confidence: str  # 'Low' | 'Medium' | 'High'
+    snapshot_kind: str  # 'pre_match' | 'retroactive'
+
+
+class Wc2026BenchmarkResponse(BaseModel):
+    summary: Wc2026BenchmarkSummary
+    matches: List[Wc2026BenchmarkMatch]
+    holdout: Optional[Wc2026ModelEvaluation] = None
+    message: Optional[str] = None
 
 
 class WcPredictionRequest(BaseModel):
@@ -492,6 +562,32 @@ CREATE TABLE IF NOT EXISTS wc_user_predictions (
 """
 
 
+# Mirrors db/migrations/005_add_wc_predictions.py. Kept here so a fresh
+# Railway deploy can serve /wc2026/benchmark before the migration runs.
+_WC_PREDICTIONS_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS wc_predictions (
+    id {serial} PRIMARY KEY,
+    fixture_id INTEGER NOT NULL UNIQUE,
+    predicted_outcome TEXT NOT NULL
+        CHECK (predicted_outcome IN ('Home','Draw','Away')),
+    prob_home REAL NOT NULL,
+    prob_draw REAL NOT NULL,
+    prob_away REAL NOT NULL,
+    confidence REAL NOT NULL,
+    model_version TEXT NOT NULL,
+    snapshot_kind TEXT NOT NULL
+        CHECK (snapshot_kind IN ('pre_match','retroactive')),
+    predicted_at TIMESTAMP NOT NULL DEFAULT {now}(),
+    actual_outcome TEXT
+        CHECK (actual_outcome IN ('Home','Draw','Away')),
+    actual_home_goals INTEGER,
+    actual_away_goals INTEGER,
+    is_correct BOOLEAN,
+    resolved_at TIMESTAMP
+);
+"""
+
+
 def _ensure_user_predictions_schema() -> None:
     """
     Create wc_user_predictions if it doesn't exist. Idempotent and safe to
@@ -512,6 +608,28 @@ def _ensure_user_predictions_schema() -> None:
     except Exception as exc:
         logger.warning(
             f"[wc2026] Could not ensure wc_user_predictions schema: {exc}"
+        )
+
+
+def _ensure_wc_predictions_schema() -> None:
+    """
+    Create wc_predictions if it doesn't exist. Idempotent. Mirrors the DDL
+    in db/migrations/005_add_wc_predictions.py so /wc2026/benchmark works
+    on environments where migration 005 hasn't been run yet.
+    """
+    engine = get_db_engine()
+    dialect = engine.dialect.name
+    serial = "SERIAL" if dialect != "sqlite" else "INTEGER"
+    now_fn = "NOW" if dialect != "sqlite" else "CURRENT_TIMESTAMP"
+    sql = _WC_PREDICTIONS_SCHEMA_SQL.format(serial=serial, now=now_fn)
+    if dialect == "sqlite":
+        sql = sql.replace("CURRENT_TIMESTAMP()", "CURRENT_TIMESTAMP")
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(sql))
+    except Exception as exc:
+        logger.warning(
+            f"[wc2026] Could not ensure wc_predictions schema: {exc}"
         )
 
 
@@ -695,6 +813,225 @@ def _get_evaluation_metrics(
     return recomputed
 
 
+# ---------- Benchmark helpers ------------------------------------------------
+
+def _confidence_label(conf: float) -> str:
+    """Bucket a 0..1 confidence into Low / Medium / High.
+
+    Mirrors `app.api._confidence_to_str` but inlined to avoid a
+    cross-module import that would create a circular dependency
+    (app.api imports from app.wc2026_routes).
+    """
+    if conf >= 0.6:
+        return "High"
+    if conf >= 0.4:
+        return "Medium"
+    return "Low"
+
+
+def _outcome_to_display(outcome: str) -> str:
+    """Map 'Home' / 'Draw' / 'Away' to the display labels the FE expects."""
+    return {"Home": "Home Win", "Draw": "Draw", "Away": "Away Win"}.get(
+        outcome, outcome,
+    )
+
+
+def _confidence_order(label: str) -> int:
+    order = ("Low", "Medium", "High")
+    return order.index(label) if label in order else 99
+
+
+def _build_wc_benchmark_response() -> Wc2026BenchmarkResponse:
+    """
+    Compose the GET /wc2026/benchmark payload.
+
+    Reads resolved wc_predictions joined with wc_fixtures, plus the
+    pending-snapshot count. The model's holdout-evaluation block is
+    always included (when available) so the FE can show it as a
+    baseline alongside live data.
+    """
+    from core.wc_prediction_store import (
+        count_pending_wc_predictions,
+        load_resolved_wc_predictions,
+    )
+
+    rows = load_resolved_wc_predictions(limit=400)
+    pending = count_pending_wc_predictions()
+
+    matches: List[Wc2026BenchmarkMatch] = []
+    correct = 0
+    incorrect = 0
+
+    # Per-kind accumulators -------------------------------------------------
+    by_kind: Dict[str, Dict[str, int]] = {
+        "pre_match": {"correct": 0, "incorrect": 0, "total": 0},
+        "retroactive": {"correct": 0, "incorrect": 0, "total": 0},
+    }
+
+    # Per-confidence-bucket accumulators ------------------------------------
+    by_conf: Dict[str, Dict[str, int]] = {}
+
+    # Per-month accumulators ------------------------------------------------
+    by_period: Dict[str, Dict[str, int]] = {}
+
+    for row in rows:
+        try:
+            home_goals = int(row.get("actual_home_goals")) if row.get("actual_home_goals") is not None else None
+            away_goals = int(row.get("actual_away_goals")) if row.get("actual_away_goals") is not None else None
+        except (TypeError, ValueError):
+            home_goals = None
+            away_goals = None
+
+        if home_goals is None or away_goals is None:
+            # Defensive: load_resolved_wc_predictions filters for
+            # resolved_at IS NOT NULL, but rows can theoretically still
+            # be missing scores in pathological data.
+            continue
+
+        actual_score = f"{home_goals}-{away_goals}"
+        # SQLite returns BOOLEAN columns as 1 / 0 ints; normalise to a real
+        # bool (or None when unresolved) before counting.
+        raw_is_correct = row.get("is_correct")
+        is_correct: Optional[bool] = (
+            None if raw_is_correct is None else bool(raw_is_correct)
+        )
+        if is_correct is True:
+            correct += 1
+        elif is_correct is False:
+            incorrect += 1
+
+        # match_date can come back as datetime.date or str depending on
+        # dialect; normalize to YYYY-MM-DD for the wire.
+        match_date = row.get("match_date")
+        if hasattr(match_date, "strftime"):
+            date_str = match_date.strftime("%Y-%m-%d")
+        else:
+            date_str = str(match_date)[:10] if match_date else ""
+
+        kind = row.get("snapshot_kind") or "retroactive"
+        if kind not in by_kind:
+            by_kind[kind] = {"correct": 0, "incorrect": 0, "total": 0}
+        if is_correct is not None:
+            by_kind[kind]["total"] += 1
+            if is_correct:
+                by_kind[kind]["correct"] += 1
+            else:
+                by_kind[kind]["incorrect"] += 1
+
+        confidence_label = _confidence_label(float(row.get("confidence") or 0.0))
+        if is_correct is not None:
+            bucket = by_conf.setdefault(
+                confidence_label, {"correct": 0, "total": 0}
+            )
+            bucket["total"] += 1
+            if is_correct:
+                bucket["correct"] += 1
+
+            period = date_str[:7] if len(date_str) >= 7 else "unknown"
+            month = by_period.setdefault(period, {"correct": 0, "total": 0})
+            month["total"] += 1
+            if is_correct:
+                month["correct"] += 1
+
+        matches.append(
+            Wc2026BenchmarkMatch(
+                id=int(row["id"]),
+                fixture_id=int(row["fixture_id"]),
+                match_date=date_str,
+                kickoff_time=row.get("kickoff_time") or None,
+                group_name=row.get("group_name") or None,
+                stage=str(row.get("stage") or "group"),
+                home_team=str(row.get("home_team") or ""),
+                away_team=str(row.get("away_team") or ""),
+                predicted_outcome=_outcome_to_display(
+                    str(row.get("predicted_outcome") or "")
+                ),
+                actual_outcome=(
+                    _outcome_to_display(str(row["actual_outcome"]))
+                    if row.get("actual_outcome")
+                    else None
+                ),
+                actual_score=actual_score,
+                correct=is_correct,
+                confidence=confidence_label,
+                snapshot_kind=kind,
+            )
+        )
+
+    total = correct + incorrect
+    accuracy = (correct / total) if total > 0 else 0.0
+
+    accuracy_by_kind = [
+        Wc2026BenchmarkKindAccuracy(
+            snapshot_kind=kind,
+            total=data["total"],
+            correct=data["correct"],
+            incorrect=data["incorrect"],
+            accuracy=(data["correct"] / data["total"]) if data["total"] > 0 else 0.0,
+        )
+        for kind, data in by_kind.items()
+        if data["total"] > 0
+    ]
+
+    accuracy_by_confidence = [
+        Wc2026BenchmarkBucketAccuracy(
+            confidence=label,
+            accuracy=(data["correct"] / data["total"]) if data["total"] > 0 else 0.0,
+            count=data["total"],
+        )
+        for label, data in sorted(by_conf.items(), key=lambda x: _confidence_order(x[0]))
+    ]
+
+    accuracy_by_period = [
+        Wc2026BenchmarkPeriodAccuracy(
+            period=p,
+            accuracy=(d["correct"] / d["total"]) if d["total"] > 0 else 0.0,
+            correct=d["correct"],
+            total=d["total"],
+        )
+        for p, d in sorted(by_period.items(), key=lambda x: x[0])
+    ]
+
+    summary = Wc2026BenchmarkSummary(
+        total_matches=total,
+        correct=correct,
+        incorrect=incorrect,
+        pending=pending,
+        accuracy=accuracy,
+        accuracy_by_kind=accuracy_by_kind,
+        accuracy_by_confidence=accuracy_by_confidence,
+        accuracy_by_period=accuracy_by_period,
+    )
+
+    holdout: Optional[Wc2026ModelEvaluation] = None
+    artifact = wc2026_prediction._BT_ARTIFACT
+    if artifact is not None:
+        metrics = _get_evaluation_metrics(artifact)
+        if metrics is not None:
+            holdout = Wc2026ModelEvaluation(**metrics)
+
+    message: Optional[str] = None
+    if total == 0 and pending == 0:
+        message = (
+            "No predictions yet. Once the scheduler snapshots upcoming WC2026 "
+            "fixtures (or the tournament starts producing results), they will "
+            "appear here. The holdout block is the model's training-time "
+            "evaluation in the meantime."
+        )
+    elif total == 0 and pending > 0:
+        message = (
+            f"{pending} prediction(s) snapshotted but no resolved matches yet. "
+            "Live accuracy will appear once results are scraped."
+        )
+
+    return Wc2026BenchmarkResponse(
+        summary=summary,
+        matches=matches,
+        holdout=holdout,
+        message=message,
+    )
+
+
 # ---------- Registration helper ---------------------------------------------
 
 def register_wc2026_routes(
@@ -727,6 +1064,7 @@ def register_wc2026_routes(
     # fresh Railway deploys serve PUT /wc2026/predictions immediately
     # without an out-of-band migration step.
     _ensure_user_predictions_schema()
+    _ensure_wc_predictions_schema()
 
     @app.get("/groups/standings", response_model=GroupStandingsResponse)
     async def get_groups_standings() -> GroupStandingsResponse:
@@ -870,6 +1208,39 @@ def register_wc2026_routes(
             n_matches=int(artifact.n_matches),
             evaluation=evaluation_payload,
         )
+
+    @app.get("/wc2026/benchmark", response_model=Wc2026BenchmarkResponse)
+    async def get_wc2026_benchmark(
+        current_user: Dict[str, Any] = Depends(get_current_user),
+    ) -> Wc2026BenchmarkResponse:
+        """
+        Performance of the WC2026 BT model: snapshotted predictions vs
+        actual results.
+
+        Reads only resolved rows (``wc_predictions.resolved_at IS NOT
+        NULL``) for the match table; the snapshot job populates the
+        rows insert-only before kickoff so the model is never re-run on
+        the request path. Each row carries a ``snapshot_kind``:
+
+        - ``pre_match``   - inserted before kickoff. Honest pre-match.
+        - ``retroactive`` - inserted after kickoff for the early-tournament
+          backfill. Defensible because the WC2026 artifact is offline-only,
+          but flagged so consumers can isolate the honest subset.
+
+        Auth-required so the page matches the existing PSL ``/benchmark``
+        ergonomics; the existing Benchmark frontend handles 401 by
+        rendering the LoginPrompt.
+        """
+        try:
+            return _build_wc_benchmark_response()
+        except Exception as exc:
+            logger.error(
+                f"[wc2026] /wc2026/benchmark failed: {exc}", exc_info=True,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to load WC2026 benchmark.",
+            )
 
     @app.get("/wc2026/predictions", response_model=UserPredictionsResponse)
     async def get_wc2026_user_predictions(
